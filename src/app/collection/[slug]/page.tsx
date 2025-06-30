@@ -1,14 +1,24 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Header } from "@/src/components/header"
-import { FloatingNavigation } from "@/src/components/floating-navigation"
-import { Card, CardContent } from "@/src/components/ui/card"
-import { Badge } from "@/src/components/ui/badge"
-import { Button } from "@/src/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar"
-import { Input } from "@/src/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
+import { useEffect, useState } from "react";
+import { Header } from "@/src/components/header";
+import { FloatingNavigation } from "@/src/components/floating-navigation";
+import { Card, CardContent } from "@/src/components/ui/card";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
+import { Input } from "@/src/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import {
   MoreVertical,
   Eye,
@@ -25,77 +35,103 @@ import {
   ExternalLink,
   Edit,
   Settings,
-} from "lucide-react"
-import { collections, timelineAssets } from "@/src/lib/mock-data"
-import type { AssetIP } from "@/src/types/asset"
-import Image from "next/image"
-import Link from "next/link"
-import { notFound } from "next/navigation"
+} from "lucide-react";
+import { collections, timelineAssets } from "@/src/lib/mock-data";
+import type { AssetIP } from "@/src/types/asset";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu"
+} from "@/src/components/ui/dropdown-menu";
+
+import { getDeployedCollectionMetadata } from "@/src/lib/starknet-service";
 
 interface CollectionPageProps {
   params: {
-    slug: string
-  }
+    slug: string;
+  };
 }
 
 export default function CollectionPage({ params }: CollectionPageProps) {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState("recent")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
 
-  const collection = collections.find((c) => c.slug === params.slug)
+  // const collection = collections.find((c) => c.slug === params.slug)
 
-  if (!collection) {
-    notFound()
-  }
+  // if (!collection) {
+  //   notFound()
+  // }
+
+  const [collection, setCollection] = useState(
+    () => collections.find((c) => c.slug === params.slug) || null
+  );
+
+  useEffect(() => {
+    if (!collection) {
+      getDeployedCollectionMetadata(params.slug)
+        .then((data) => {
+          if (data) {
+            setCollection(data);
+          } else {
+            notFound();
+          }
+        })
+        .catch(() => notFound());
+    }
+  }, [params.slug, collection]);
 
   // Filter assets that belong to this collection
-  const collectionAssets = timelineAssets.filter((asset) => asset.collectionSlug === collection.slug)
+  const collectionSlug = collection?.slug;
+
+  const collectionAssets = timelineAssets.filter(
+    (asset) => asset.collectionSlug === collectionSlug
+  );
 
   const filteredAssets = collectionAssets.filter(
     (asset) =>
       asset.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      asset.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      asset.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const sortedAssets = [...filteredAssets].sort((a, b) => {
     switch (sortBy) {
       case "name":
-        return a.title.localeCompare(b.title)
+        return a.title.localeCompare(b.title);
       case "type":
-        return a.type.localeCompare(b.type)
+        return a.type.localeCompare(b.type);
       case "author":
-        return a.author.localeCompare(b.author)
+        return a.author.localeCompare(b.author);
       default:
-        return 0
+        return 0;
     }
-  })
+  });
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
       case "digital art":
-        return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200"
+        return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200";
       case "audio":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       case "publications":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "software":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "patents":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
       case "ai art":
-        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
+        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
-  }
+  };
+
+  if (!collection) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
@@ -116,7 +152,11 @@ export default function CollectionPage({ params }: CollectionPageProps) {
 
           <div className="px-4 py-8">
             <div className="max-w-6xl mx-auto">
-              <div className={`${collection.bannerImage ? "-mt-32 relative z-10" : ""}`}>
+              <div
+                className={`${
+                  collection.bannerImage ? "-mt-32 relative z-10" : ""
+                }`}
+              >
                 <div className="flex flex-col sm:flex-row gap-6 items-start">
                   <div className="relative">
                     <Image
@@ -140,16 +180,28 @@ export default function CollectionPage({ params }: CollectionPageProps) {
                     <div>
                       <div className="flex items-center space-x-3 mb-2">
                         <h1
-                          className={`text-3xl sm:text-4xl font-bold ${collection.bannerImage ? "text-white" : "text-foreground"}`}
+                          className={`text-3xl sm:text-4xl font-bold ${
+                            collection.bannerImage
+                              ? "text-white"
+                              : "text-foreground"
+                          }`}
                         >
                           {collection.name}
                         </h1>
-                        <Badge className={`${getCategoryColor(collection.category)} border-0`}>
+                        <Badge
+                          className={`${getCategoryColor(
+                            collection.category
+                          )} border-0`}
+                        >
                           {collection.category}
                         </Badge>
                       </div>
                       <p
-                        className={`text-lg ${collection.bannerImage ? "text-gray-200" : "text-muted-foreground"} max-w-2xl`}
+                        className={`text-lg ${
+                          collection.bannerImage
+                            ? "text-gray-200"
+                            : "text-muted-foreground"
+                        } max-w-2xl`}
                       >
                         {collection.description}
                       </p>
@@ -162,21 +214,35 @@ export default function CollectionPage({ params }: CollectionPageProps) {
                           src={collection.creator.avatar || "/placeholder.svg"}
                           alt={collection.creator.name}
                         />
-                        <AvatarFallback>{collection.creator.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>
+                          {collection.creator.name.charAt(0)}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <Link href={`/creator/${collection.creator.username}`}>
+                          <Link
+                            href={`/creator/${collection.creator.username}`}
+                          >
                             <span
-                              className={`font-medium hover:underline ${collection.bannerImage ? "text-white" : "text-foreground"}`}
+                              className={`font-medium hover:underline ${
+                                collection.bannerImage
+                                  ? "text-white"
+                                  : "text-foreground"
+                              }`}
                             >
                               {collection.creator.name}
                             </span>
                           </Link>
-                          {collection.creator.verified && <CheckCircle className="w-4 h-4 text-blue-400" />}
+                          {collection.creator.verified && (
+                            <CheckCircle className="w-4 h-4 text-blue-400" />
+                          )}
                         </div>
                         <div
-                          className={`text-sm ${collection.bannerImage ? "text-gray-300" : "text-muted-foreground"}`}
+                          className={`text-sm ${
+                            collection.bannerImage
+                              ? "text-gray-300"
+                              : "text-muted-foreground"
+                          }`}
                         >
                           Created {collection.createdAt}
                         </div>
@@ -187,24 +253,40 @@ export default function CollectionPage({ params }: CollectionPageProps) {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <div className="text-center">
                         <div
-                          className={`text-2xl font-bold ${collection.bannerImage ? "text-white" : "text-foreground"}`}
+                          className={`text-2xl font-bold ${
+                            collection.bannerImage
+                              ? "text-white"
+                              : "text-foreground"
+                          }`}
                         >
                           {collection.assets}
                         </div>
                         <div
-                          className={`text-sm ${collection.bannerImage ? "text-gray-300" : "text-muted-foreground"}`}
+                          className={`text-sm ${
+                            collection.bannerImage
+                              ? "text-gray-300"
+                              : "text-muted-foreground"
+                          }`}
                         >
                           Assets
                         </div>
                       </div>
                       <div className="text-center">
                         <div
-                          className={`text-2xl font-bold ${collection.bannerImage ? "text-white" : "text-foreground"}`}
+                          className={`text-2xl font-bold ${
+                            collection.bannerImage
+                              ? "text-white"
+                              : "text-foreground"
+                          }`}
                         >
                           {collection.blockchain}
                         </div>
                         <div
-                          className={`text-sm ${collection.bannerImage ? "text-gray-300" : "text-muted-foreground"}`}
+                          className={`text-sm ${
+                            collection.bannerImage
+                              ? "text-gray-300"
+                              : "text-muted-foreground"
+                          }`}
                         >
                           Network
                         </div>
@@ -212,12 +294,20 @@ export default function CollectionPage({ params }: CollectionPageProps) {
                       {collection.floorPrice && (
                         <div className="text-center">
                           <div
-                            className={`text-2xl font-bold ${collection.bannerImage ? "text-white" : "text-foreground"}`}
+                            className={`text-2xl font-bold ${
+                              collection.bannerImage
+                                ? "text-white"
+                                : "text-foreground"
+                            }`}
                           >
                             {collection.floorPrice}
                           </div>
                           <div
-                            className={`text-sm ${collection.bannerImage ? "text-gray-300" : "text-muted-foreground"}`}
+                            className={`text-sm ${
+                              collection.bannerImage
+                                ? "text-gray-300"
+                                : "text-muted-foreground"
+                            }`}
                           >
                             Floor Price
                           </div>
@@ -231,17 +321,27 @@ export default function CollectionPage({ params }: CollectionPageProps) {
                         <Heart className="w-4 h-4 mr-2" />
                         Follow Collection
                       </Button>
-                      <Button variant="outline" className="hover:scale-105 transition-transform">
+                      <Button
+                        variant="outline"
+                        className="hover:scale-105 transition-transform"
+                      >
                         <Share className="w-4 h-4 mr-2" />
                         Share
                       </Button>
-                      <Button variant="outline" className="hover:scale-105 transition-transform">
+                      <Button
+                        variant="outline"
+                        className="hover:scale-105 transition-transform"
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Export
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="hover:scale-105 transition-transform">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="hover:scale-105 transition-transform"
+                          >
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -274,8 +374,12 @@ export default function CollectionPage({ params }: CollectionPageProps) {
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-foreground mb-2">Collection Assets</h2>
-                <p className="text-muted-foreground">{collectionAssets.length} items in this collection</p>
+                <h2 className="text-2xl font-bold text-foreground mb-2">
+                  Collection Assets
+                </h2>
+                <p className="text-muted-foreground">
+                  {collectionAssets.length} items in this collection
+                </p>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -328,26 +432,35 @@ export default function CollectionPage({ params }: CollectionPageProps) {
           </div>
         </div>
       </main>
-    
     </div>
-  )
+  );
 }
 
-function AssetGrid({ assets, viewMode }: { assets: AssetIP[]; viewMode: "grid" | "list" }) {
+function AssetGrid({
+  assets,
+  viewMode,
+}: {
+  assets: AssetIP[];
+  viewMode: "grid" | "list";
+}) {
   if (assets.length === 0) {
     return (
       <div className="text-center py-16">
         <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
           <FolderOpen className="w-10 h-10 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold text-foreground mb-3">No assets found</h3>
-        <p className="text-muted-foreground mb-6">This collection doesn't have any assets yet</p>
+        <h3 className="text-xl font-semibold text-foreground mb-3">
+          No assets found
+        </h3>
+        <p className="text-muted-foreground mb-6">
+          This collection doesn't have any assets yet
+        </p>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
           Add Assets
         </Button>
       </div>
-    )
+    );
   }
 
   if (viewMode === "list") {
@@ -357,7 +470,7 @@ function AssetGrid({ assets, viewMode }: { assets: AssetIP[]; viewMode: "grid" |
           <ExpandableAssetCard key={asset.id} asset={asset} index={index} />
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -366,10 +479,16 @@ function AssetGrid({ assets, viewMode }: { assets: AssetIP[]; viewMode: "grid" |
         <ExpandableAssetCard key={asset.id} asset={asset} index={index} />
       ))}
     </div>
-  )
+  );
 }
 
-function ExpandableAssetCard({ asset, index }: { asset: AssetIP; index: number }) {
+function ExpandableAssetCard({
+  asset,
+  index,
+}: {
+  asset: AssetIP;
+  index: number;
+}) {
   return (
     <Card
       className="overflow-hidden hover:shadow-xl transition-all duration-500 group"
@@ -400,7 +519,9 @@ function ExpandableAssetCard({ asset, index }: { asset: AssetIP; index: number }
             {asset.title}
           </h3>
         </Link>
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{asset.description}</p>
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          {asset.description}
+        </p>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
           <div className="text-xs">v{asset.ipVersion}</div>
@@ -417,5 +538,5 @@ function ExpandableAssetCard({ asset, index }: { asset: AssetIP; index: number }
         </Link>
       </CardContent>
     </Card>
-  )
+  );
 }
