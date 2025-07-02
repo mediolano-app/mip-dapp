@@ -40,7 +40,7 @@ import { collections, timelineAssets } from "@/src/lib/mock-data";
 import type { AssetIP } from "@/src/types/asset";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,13 +51,14 @@ import {
 
 import { getDeployedCollectionMetadata } from "@/src/lib/starknet-service";
 
-interface CollectionPageProps {
-  params: {
-    slug: string;
-  };
-}
+// interface CollectionPageProps {
+//   params: {
+//     slug: string;
+//   };
+// }
 
-export default function CollectionPage({ params }: CollectionPageProps) {
+// export default function CollectionPage({ params }: CollectionPageProps) {
+export default function CollectionPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recent");
@@ -68,13 +69,19 @@ export default function CollectionPage({ params }: CollectionPageProps) {
   //   notFound()
   // }
 
+  const { slug } = useParams() as { slug: string };
+
+  // const [collection, setCollection] = useState(
+  //   () => collections.find((c) => c.slug === params.slug) || null
+  // );
   const [collection, setCollection] = useState(
-    () => collections.find((c) => c.slug === params.slug) || null
+    () => collections.find((c) => c.slug === slug) || null
   );
 
   useEffect(() => {
-    if (!collection) {
-      getDeployedCollectionMetadata(params.slug)
+    if (!collection && slug) {
+      // getDeployedCollectionMetadata(params.slug)
+      getDeployedCollectionMetadata(slug)
         .then((data) => {
           if (data) {
             setCollection(data);
@@ -84,7 +91,8 @@ export default function CollectionPage({ params }: CollectionPageProps) {
         })
         .catch(() => notFound());
     }
-  }, [params.slug, collection]);
+    // }, [params.slug, collection]);
+  }, [slug, collection]);
 
   // Filter assets that belong to this collection
   const collectionSlug = collection?.slug;

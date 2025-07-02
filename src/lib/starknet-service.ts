@@ -5,6 +5,7 @@ import {
   CallData,
   num,
   validateAndParseAddress,
+  uint256,
 } from "starknet";
 
 // StarkNet RPC Provider
@@ -460,22 +461,32 @@ export async function getDeployedCollectionMetadata(
 ): Promise<any> {
   try {
     const contract = new Contract(ERC721_ABI, collectionAddress, provider);
-    const tokenURIResult = await contract.call("tokenURI", [
-      { low: 0, high: 0 },
-    ]);
+    // const tokenURIResult = await contract.call("tokenURI", [
+    //   { low: 0, high: 0 },
+    // ]);
+
+    const tokenId = uint256.bnToUint256(BigInt(0)); // Use 0 for the first token
+    console.log("Calling tokenURI with tokenId:", tokenId);
+
+    const tokenURIResult = await contract.call("tokenURI", [tokenId]);
 
     const uri = starknetService.feltArrayToString(
       Array.isArray(tokenURIResult) ? tokenURIResult : [tokenURIResult]
     );
 
+    console.log("Fetched tokenURI:", uri);
+
     const metadata = await starknetService.fetchMetadata(uri);
+    console.log("Fetched metadata:", metadata);
 
     return {
       id: collectionAddress,
+      slug: metadata?.slug || "",
       name: metadata?.name || "Untitled Collection",
       description: metadata?.description || "",
       category: metadata?.category || "Uncategorized",
-      image: metadata?.image || "",
+      coverImage: metadata?.image || "",
+      bannerImage: metadata?.bannerImage || "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       assets: 0,

@@ -4,7 +4,7 @@ import { ChipiProvider } from "@chipi-pay/chipi-sdk";
 
 // const CHIPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_CHIPI_API_KEY!;
 const CHIPI_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_CHIPI_API_KEY || "dummy_key111"; // Fallback for development
+  process.env.NEXT_PUBLIC_CHIPI_API_KEY || "dummy_key111"; // Fallback for development;
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // if (!CHIPI_PUBLIC_KEY) {

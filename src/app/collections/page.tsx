@@ -73,7 +73,12 @@ export default function CollectionsPage() {
   });
 
   const totalAssets = collections.reduce(
-    (sum, collection) => sum + collection.assets,
+    // (sum, collection) => sum + collection.assets,
+    (sum, collection) =>
+      sum +
+      (Array.isArray(collection.assets)
+        ? collection.assets.length
+        : collection.assets),
     0
   );
 
