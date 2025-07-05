@@ -69,30 +69,47 @@ export default function CollectionPage() {
   //   notFound()
   // }
 
-  const { slug } = useParams() as { slug: string };
-
   // const [collection, setCollection] = useState(
   //   () => collections.find((c) => c.slug === params.slug) || null
   // );
-  const [collection, setCollection] = useState(
-    () => collections.find((c) => c.slug === slug) || null
-  );
+
+  // const [collection, setCollection] = useState(
+  //   () => collections.find((c) => c.slug === slug) || null
+  // );
+
+  const [collection, setCollection] = useState<any | null>(null);
+  const { slug } = useParams() as { slug: string };
+
+  // useEffect(() => {
+  //   if (!collection && slug) {
+  //     // getDeployedCollectionMetadata(params.slug)
+  //     getDeployedCollectionMetadata(slug)
+  //       .then((data) => {
+  //         if (data) {
+  //           setCollection(data);
+  //         } else {
+  //           notFound();
+  //         }
+  //       })
+  //       .catch(() => notFound());
+  //   }
+  //   // }, [params.slug, collection]);
+  // }, [slug, collection]);
 
   useEffect(() => {
-    if (!collection && slug) {
-      // getDeployedCollectionMetadata(params.slug)
-      getDeployedCollectionMetadata(slug)
-        .then((data) => {
-          if (data) {
-            setCollection(data);
-          } else {
-            notFound();
-          }
-        })
-        .catch(() => notFound());
+    async function loadCollection() {
+      // console.log("Fetching metadata for slug:", slug);
+      const data = await getDeployedCollectionMetadata(slug);
+      // console.log("Received metadata:", data);
+
+      if (!data) return notFound();
+      setCollection(data);
     }
-    // }, [params.slug, collection]);
-  }, [slug, collection]);
+
+    if (slug) {
+      loadCollection();
+    }
+  }, [slug]);
 
   // Filter assets that belong to this collection
   const collectionSlug = collection?.slug;
@@ -139,7 +156,9 @@ export default function CollectionPage() {
     }
   };
 
-  if (!collection) return null;
+  console.log("Rendering collection:", collection);
+  if (!collection)
+    return <div className="p-6 text-red-500">Loading collection...</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
@@ -376,7 +395,6 @@ export default function CollectionPage() {
             </div>
           </div>
         </div>
-
         {/* Collection Assets */}
         <div className="px-4 py-8 border-t border-border/30">
           <div className="max-w-6xl mx-auto">

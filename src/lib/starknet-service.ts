@@ -459,6 +459,9 @@ export class StarkNetService {
 export async function getDeployedCollectionMetadata(
   collectionAddress: string
 ): Promise<any> {
+  console.log("Called getDeployedCollectionMetadata with:", collectionAddress);
+
+  console.log("Requested slug:", collectionAddress);
   try {
     const contract = new Contract(ERC721_ABI, collectionAddress, provider);
     // const tokenURIResult = await contract.call("tokenURI", [
@@ -479,9 +482,19 @@ export async function getDeployedCollectionMetadata(
     const metadata = await starknetService.fetchMetadata(uri);
     console.log("Fetched metadata:", metadata);
 
+    // const assets = await starknetService.getNFTAssets(
+    //   collectionAddress,
+    //   walletAddress
+    // );
+
+    if (!metadata) throw new Error("Invalid or empty metadata");
+
+    console.log("Fetched metadata:", metadata);
+    console.log("Metadata slug:", metadata?.slug);
+
     return {
       id: collectionAddress,
-      slug: metadata?.slug || "",
+      slug: metadata?.slug || collectionAddress,
       name: metadata?.name || "Untitled Collection",
       description: metadata?.description || "",
       category: metadata?.category || "Uncategorized",
@@ -493,6 +506,13 @@ export async function getDeployedCollectionMetadata(
       views: 0,
       likes: 0,
       isFeatured: false,
+      blockchain: "Starknet",
+      creator: {
+        name: metadata?.creator?.name || "Unknown Creator",
+        username: metadata?.creator?.username || "unknown",
+        avatar: metadata?.creator?.avatar || "",
+        verified: metadata?.creator?.verified || false,
+      },
     };
   } catch (error) {
     console.error("Error fetching collection metadata:", error);
