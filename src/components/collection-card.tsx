@@ -1,45 +1,63 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/src/components/ui/card"
-import { Badge } from "@/src/components/ui/badge"
-import { Button } from "@/src/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar"
-import { Eye, Heart, Star, TrendingUp, CheckCircle, Calendar, FolderOpen } from "lucide-react"
-import type { Collection } from "@/src/types/asset"
-import Image from "next/image"
-import Link from "next/link"
+import { Card, CardContent } from "@/src/components/ui/card";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
+import {
+  Eye,
+  Heart,
+  Star,
+  TrendingUp,
+  CheckCircle,
+  Calendar,
+  FolderOpen,
+} from "lucide-react";
+import type { Collection } from "@/src/types/asset";
+import Image from "next/image";
+import Link from "next/link";
 
 interface CollectionCardProps {
-  collection: Collection
-  variant?: "default" | "featured" | "compact"
+  collection: Collection;
+  variant?: "default" | "featured" | "compact";
 }
 
-export function CollectionCard({ collection, variant = "default" }: CollectionCardProps) {
+export function CollectionCard({
+  collection,
+  variant = "default",
+}: CollectionCardProps) {
   const getCategoryColor = (category: string) => {
     if (!category) return "defaultColor"; // Replace with your default color
     switch (category.toLowerCase()) {
       case "digital art":
-        return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200"
+        return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200";
       case "audio":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       case "publications":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "software":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "patents":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
       case "ai art":
-        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
+        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
-  }
+  };
 
   if (variant === "compact") {
     return (
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
         <div className="flex items-center space-x-4 p-4">
-          <Link href={`/collection/${collection.slug}`} className="relative flex-shrink-0">
+          <Link
+            href={`/collection/${collection.slug}`}
+            className="relative flex-shrink-0"
+          >
             <Image
               src={collection.coverImage || "/placeholder.svg"}
               alt={collection.name}
@@ -58,12 +76,24 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
                 {collection.name}
               </h3>
             </Link>
-            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{collection.description}</p>
+            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+              {collection.description}
+            </p>
             <div className="flex items-center space-x-3 mt-2">
-              <Badge className={`${getCategoryColor(collection.category)} border-0 text-xs`}>
+              <Badge
+                className={`${getCategoryColor(
+                  collection.category
+                )} border-0 text-xs`}
+              >
                 {collection.category}
               </Badge>
-              <span className="text-xs text-muted-foreground">{collection.assets} assets</span>
+              {/* <span className="text-xs text-muted-foreground">{collection.assets} assets</span> */}
+              <span className="text-xs text-muted-foreground">
+                {Array.isArray(collection.assets)
+                  ? collection.assets.length
+                  : collection.assets}{" "}
+                assets
+              </span>
             </div>
           </div>
 
@@ -73,14 +103,18 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
               <div className="text-xs text-muted-foreground">assets</div>
             </div>
             <Link href={`/collection/${collection.slug}`}>
-              <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
+              <Button
+                variant="outline"
+                size="sm"
+                className="hover:scale-105 transition-transform"
+              >
                 <Eye className="w-4 h-4" />
               </Button>
             </Link>
           </div>
         </div>
       </Card>
-    )
+    );
   }
 
   if (variant === "featured") {
@@ -108,13 +142,22 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
           <div className="absolute bottom-3 left-3 right-3">
             <div className="flex items-center space-x-2">
               <Avatar className="w-8 h-8 border-2 border-white">
-                <AvatarImage src={collection.creator.avatar || "/placeholder.svg"} alt={collection.creator.name} />
-                <AvatarFallback>{collection.creator.name.charAt(0)}</AvatarFallback>
+                <AvatarImage
+                  src={collection.creator.avatar || "/placeholder.svg"}
+                  alt={collection.creator.name}
+                />
+                <AvatarFallback>
+                  {collection.creator.name.charAt(0)}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-1">
-                  <span className="text-white font-medium text-sm truncate">{collection.creator.name}</span>
-                  {collection.creator.verified && <CheckCircle className="w-3 h-3 text-blue-400" />}
+                  <span className="text-white font-medium text-sm truncate">
+                    {collection.creator.name}
+                  </span>
+                  {collection.creator.verified && (
+                    <CheckCircle className="w-3 h-3 text-blue-400" />
+                  )}
                 </div>
               </div>
             </div>
@@ -127,14 +170,25 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
               {collection.name}
             </h3>
           </Link>
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{collection.description}</p>
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {collection.description}
+          </p>
 
           <div className="flex items-center justify-between mb-4">
-            <Badge className={`${getCategoryColor(collection.category)} border-0`}>{collection.category}</Badge>
+            <Badge
+              className={`${getCategoryColor(collection.category)} border-0`}
+            >
+              {collection.category}
+            </Badge>
             <div className="flex items-center space-x-3 text-sm text-muted-foreground">
               <div className="flex items-center space-x-1">
                 <FolderOpen className="w-3 h-3" />
-                <span>{collection.assets}</span>
+                {/* <span>{collection.assets}</span> */}
+                <span>
+                  {Array.isArray(collection.assets)
+                    ? collection.assets.length
+                    : collection.assets}
+                </span>
               </div>
               <div className="flex items-center space-x-1">
                 <Eye className="w-3 h-3" />
@@ -150,7 +204,9 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
           {collection.floorPrice && (
             <div className="flex items-center justify-between text-sm mb-4">
               <span className="text-muted-foreground">Floor Price</span>
-              <span className="font-bold text-foreground">{collection.floorPrice}</span>
+              <span className="font-bold text-foreground">
+                {collection.floorPrice}
+              </span>
             </div>
           )}
 
@@ -162,7 +218,7 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
           </Link>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -191,12 +247,21 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
         <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="flex items-center space-x-2">
             <Avatar className="w-6 h-6 border border-white">
-              <AvatarImage src={collection.creator.avatar || "/placeholder.svg"} alt={collection.creator.name} />
-              <AvatarFallback>{collection.creator.name.charAt(0)}</AvatarFallback>
+              <AvatarImage
+                src={collection.creator.avatar || "/placeholder.svg"}
+                alt={collection.creator.name}
+              />
+              <AvatarFallback>
+                {collection.creator.name.charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div className="flex items-center space-x-1">
-              <span className="text-white text-xs font-medium">{collection.creator.name}</span>
-              {collection.creator.verified && <CheckCircle className="w-3 h-3 text-blue-400" />}
+              <span className="text-white text-xs font-medium">
+                {collection.creator.name}
+              </span>
+              {collection.creator.verified && (
+                <CheckCircle className="w-3 h-3 text-blue-400" />
+              )}
             </div>
           </div>
         </div>
@@ -209,14 +274,27 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
               {collection.name}
             </h3>
           </Link>
-          <Badge className={`${getCategoryColor(collection.category)} border-0 text-xs`}>{collection.category}</Badge>
+          <Badge
+            className={`${getCategoryColor(
+              collection.category
+            )} border-0 text-xs`}
+          >
+            {collection.category}
+          </Badge>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{collection.description}</p>
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          {collection.description}
+        </p>
 
         <div className="grid grid-cols-3 gap-3 mb-4 text-center">
           <div>
-            <div className="text-sm font-bold text-foreground">{collection.assets}</div>
+            <div className="text-sm font-bold text-foreground">
+              {/* {collection.assets} */}
+              {Array.isArray(collection.assets)
+                ? collection.assets.length
+                : collection.assets}
+            </div>
             <div className="text-xs text-muted-foreground">Assets</div>
           </div>
           <div>
@@ -232,7 +310,9 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
         {collection.floorPrice && (
           <div className="flex items-center justify-between text-sm mb-4 p-2 bg-muted/50 rounded-lg">
             <span className="text-muted-foreground">Floor Price</span>
-            <span className="font-bold text-foreground">{collection.floorPrice}</span>
+            <span className="font-bold text-foreground">
+              {collection.floorPrice}
+            </span>
           </div>
         )}
 
@@ -258,5 +338,5 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
         </Link>
       </CardContent>
     </Card>
-  )
+  );
 }

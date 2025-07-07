@@ -12,6 +12,21 @@ export default function OnboardingComponent() {
   const { user } = useUser();
   const router = useRouter();
   const { createWalletAsync, isLoading, isError } = useCreateWallet();
+
+  // Mock createWalletAsync function for demonstration purposes
+  // const createWalletAsync = async ({
+  //   encryptKey,
+  //   bearerToken,
+  // }: {
+  //   encryptKey: string;
+  //   bearerToken: string;
+  // }) => ({
+  //   success: true,
+  //   wallet: { publicKey: "0x123", encryptedPrivateKey: "abc" },
+  // });
+  // const isLoading = false;
+  // const isError = false;
+
   const { getToken } = useAuth();
 
   // State for form validation and errors
@@ -21,19 +36,19 @@ export default function OnboardingComponent() {
 
   // PIN validation function
   const validatePin = (pin: string): string => {
-    if (!pin || pin.trim() === '') {
-      return 'PIN is required';
+    if (!pin || pin.trim() === "") {
+      return "PIN is required";
     }
     if (!/^\d+$/.test(pin)) {
-      return 'PIN must contain only numbers';
+      return "PIN must contain only numbers";
     }
     if (pin.length < 6) {
-      return 'PIN must be at least 6 characters';
+      return "PIN must be at least 6 characters";
     }
     if (pin.length > 12) {
-      return 'PIN must be no more than 12 characters';
+      return "PIN must be no more than 12 characters";
     }
-    return '';
+    return "";
   };
 
   // Handle PIN input change for real-time validation
@@ -53,7 +68,7 @@ export default function OnboardingComponent() {
       setIsSubmitting(true);
       setGeneralError("");
 
-      const pin = formData.get('pin') as string;
+      const pin = formData.get("pin") as string;
 
       // Validate PIN
       const pinValidationError = validatePin(pin);
@@ -62,8 +77,10 @@ export default function OnboardingComponent() {
         return;
       }
 
-      console.log('Creating wallet...');
-      const token = await getToken({ template: process.env.NEXT_PUBLIC_CLERK_TEMPLATE_NAME });
+      console.log("Creating wallet...");
+      const token = await getToken({
+        template: process.env.NEXT_PUBLIC_CLERK_TEMPLATE_NAME,
+      });
       console.log("Token received:", token);
       if (!token) {
         throw new Error("No bearer token found");
@@ -73,18 +90,18 @@ export default function OnboardingComponent() {
         encryptKey: pin,
         bearerToken: token,
       });
-      console.log('Wallet creation response:', response);
+      console.log("Wallet creation response:", response);
 
       if (!response.success || !response.wallet) {
-        throw new Error('Failed to create wallet');
+        throw new Error("Failed to create wallet");
       }
 
-      console.log('Updating Clerk metadata...');
+      console.log("Updating Clerk metadata...");
       const result = await completeOnboarding({
         publicKey: response.wallet.publicKey,
         encryptedPrivateKey: response.wallet.encryptedPrivateKey,
       });
-      console.log('Clerk update result:', result);
+      console.log("Clerk update result:", result);
 
       if (result.error) {
         throw new Error(result.error);
@@ -95,12 +112,14 @@ export default function OnboardingComponent() {
       router.refresh();
       router.push("/");
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
-      setGeneralError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      console.error("Error in handleSubmit:", error);
+      setGeneralError(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   if (isLoading || isSubmitting) {
     return (
@@ -113,7 +132,9 @@ export default function OnboardingComponent() {
         >
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-300 mx-auto mb-4"></div>
           <div className=" font-semibold">Creating your wallet...</div>
-          <p className="text-sm  mt-2">Please wait while we set up your account</p>
+          <p className="text-sm  mt-2">
+            Please wait while we set up your account
+          </p>
         </motion.div>
       </main>
     );
@@ -128,8 +149,12 @@ export default function OnboardingComponent() {
           transition={{ duration: 0.6 }}
           className="backdrop-blur-md bg-red-400/10 p-8 rounded-2xl shadow-2xl max-w-md w-full  border border-red-300/20 text-center"
         >
-          <div className="text-red-300 font-semibold text-xl mb-2">⚠️ Error</div>
-          <p className="text-red-200/70">Failed to create wallet. Please try again.</p>
+          <div className="text-red-300 font-semibold text-xl mb-2">
+            ⚠️ Error
+          </div>
+          <p className="text-red-200/70">
+            Failed to create wallet. Please try again.
+          </p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-red-400/20 hover:bg-red-400/30 transition  rounded-lg font-medium"
@@ -158,7 +183,9 @@ export default function OnboardingComponent() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-4 p-3 bg-red-400/10 border border-red-300/20 rounded-lg"
           >
-            <p className="text-red-300 text-sm font-medium">❌ {generalError}</p>
+            <p className="text-red-300 text-sm font-medium">
+              ❌ {generalError}
+            </p>
           </motion.div>
         )}
 
@@ -169,7 +196,8 @@ export default function OnboardingComponent() {
                 Create your PIN
               </label>
               <p className="text-xs  mb-3">
-                This PIN will encrypt your private key. Choose 6-12 numbers you'll remember.
+                This PIN will encrypt your private key. Choose 6-12 numbers
+                you'll remember.
               </p>
               <input
                 type="password"
@@ -180,10 +208,11 @@ export default function OnboardingComponent() {
                 maxLength={12}
                 required
                 onChange={handlePinChange}
-                className={`w-full px-3 py-3 bg-blue-200/10 border rounded-lg shadow-sm focus:outline-none focus:ring-2  text-lg tracking-wider transition-all ${pinError
-                  ? 'border-red-300/50 focus:ring-red-300/50 focus:border-red-300'
-                  : 'border-blue-200/20 focus:ring-blue-300/50 focus:border-blue-300'
-                  }`}
+                className={`w-full px-3 py-3 bg-blue-200/10 border rounded-lg shadow-sm focus:outline-none focus:ring-2  text-lg tracking-wider transition-all ${
+                  pinError
+                    ? "border-red-300/50 focus:ring-red-300/50 focus:border-red-300"
+                    : "border-blue-200/20 focus:ring-blue-300/50 focus:border-blue-300"
+                }`}
                 placeholder="Enter 6-12 digit PIN"
               />
               {pinError && (
@@ -197,7 +226,8 @@ export default function OnboardingComponent() {
               )}
               {!pinError && (
                 <p className="mt-2  text-xs">
-                  💡 Tip: Use a PIN you can easily remember but others can't guess
+                  💡 Tip: Use a PIN you can easily remember but others can't
+                  guess
                 </p>
               )}
             </div>
@@ -205,15 +235,16 @@ export default function OnboardingComponent() {
           <button
             type="submit"
             disabled={!!pinError || isSubmitting}
-            className={`w-full px-4 py-3 rounded-lg font-semibold transition-all ${pinError || isSubmitting
-              ? 'bg-gray-400/20  cursor-not-allowed'
-              : 'bg-blue-400/20 hover:bg-blue-400/30  hover:shadow-lg transform hover:scale-[1.02]'
-              }`}
+            className={`w-full px-4 py-3 rounded-lg font-semibold transition-all ${
+              pinError || isSubmitting
+                ? "bg-gray-400/20  cursor-not-allowed"
+                : "bg-blue-400/20 hover:bg-blue-400/30  hover:shadow-lg transform hover:scale-[1.02]"
+            }`}
           >
-            {isSubmitting ? 'Creating Wallet...' : 'Create Wallet'}
+            {isSubmitting ? "Creating Wallet..." : "Create Wallet"}
           </button>
         </form>
       </motion.div>
     </main>
-  )
+  );
 }
