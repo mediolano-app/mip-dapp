@@ -32,7 +32,7 @@ import {
 } from "lucide-react"
 import { collections, timelineAssets } from "@/src/lib/mock-data"
 import { useCollection } from "@/src/hooks/use-collections"
-import { collectionsService } from "@/src/lib/collections-service"
+import { collectionsService } from "@/src/services/collections.service"
 import type { AssetIP } from "@/src/types/asset"
 import { formatDate } from "@/src/lib/utils"
 import Image from "next/image"

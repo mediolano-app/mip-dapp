@@ -1,12 +1,12 @@
 import { RpcProvider, Contract, CallData, num, validateAndParseAddress } from "starknet"
-import { starknetService } from "../services/starknet.service"
+import { starknetService } from "./starknet.service"
 import type { Collection, AssetIP } from "@/src/types/asset"
 import { ip_collection_abi } from "@/src/abi/ip_collection"
 
 // MIP Protocol Contract ABI for collections
-const MIP_COLLECTIONS_ABI = ip_collection_abi
+const MIP_COLLECTIONS_ABI = ip_collection_abi;
 // MIP Protocol Contract Address (from environment or default)
-const MIP_COLLECTIONS_CONTRACT = process.env.NEXT_PUBLIC_COLLECTION_FACTORY_ADDRESS 
+const MIP_COLLECTIONS_CONTRACT = process.env.NEXT_PUBLIC_COLLECTION_FACTORY_ADDRESS;
 
 export interface MIPCollection {
     id: string
@@ -40,16 +40,15 @@ export interface PaginatedCollections {
     hasMore: boolean
 }
 
-// Define the CollectionStats interface based on ABI
 export interface CollectionStats {
-    total_supply: bigint | string | number
-    minted: bigint | string | number
-    burned: bigint | string | number
-    last_mint_batch_id: bigint | string | number
+    total_minted: bigint | string | number
+    total_burned: bigint | string | number
+    total_transfers: bigint | string | number
     last_mint_time: bigint | string | number
+    last_burn_time: bigint | string | number
+    last_transfer_time: bigint | string | number
 }
 
-// Define Token interface based on ABI
 export interface ContractToken {
     collection_id: bigint | string | number
     token_id: bigint | string | number
@@ -57,21 +56,29 @@ export interface ContractToken {
     metadata_uri: string
 }
 
-// Define Collection Metadata interface from IPFS
+export interface ContractCollection {
+    name: string
+    symbol: string
+    base_uri: string
+    owner: string
+    ip_nft: string
+    is_active: boolean
+}
+
 export interface CollectionMetadata {
     name: string
     description: string
     image: string
+    banner_image?: string
     external_url?: string
-    type?: string
+    seller_fee_basis_points?: number
+    fee_recipient?: string
+    attributes?: Array<{ trait_type: string; value: string }>
     category?: string
     visibility?: string
+    type?: string
     tags?: string[]
-    createdAt?: string
-    featured?: boolean
-    banner_image?: string
-    coverImage?: string // Alternative field name for image
-    properties?: Record<string, any>
+    created_at?: string
 }
 
 export class CollectionsService {
@@ -80,7 +87,7 @@ export class CollectionsService {
     private contractAvailable: boolean = false
 
     constructor() {
-        this.provider = starknetService["provider"] 
+        this.provider = starknetService["provider"]
         this.initializeContract()
     }
 
@@ -99,9 +106,9 @@ export class CollectionsService {
     }
 
     /**
-     * Get all collections by discovering them through tokens
+     * Get all collections by discovering them through known collection IDs
      * Since there's no direct method to list all collections,
-     * we use list_all_tokens() and extract unique collection IDs
+     * we use a fallback approach with manually tracked collections
      */
     public async getCollections(
         filters: CollectionFilters = {},
@@ -119,8 +126,24 @@ export class CollectionsService {
                 }
             }
 
-            const collectionIds = await this.discoverCollectionIds()
+            // this should be tracked through events or a dedicated registry
+            const maxCollectionId = 50
             
+            const collectionCheckPromises = Array.from({ length: maxCollectionId }, (_, i) => {
+                const collectionId = i + 1
+                return this.contract!.call("is_valid_collection", [collectionId])
+                    .then(isValid => ({ id: collectionId, isValid }))
+                    .catch(error => {
+                        console.warn(`Error checking collection ${collectionId}:`, error)
+                        return { id: collectionId, isValid: false }
+                    })
+            })
+
+            const collectionResults = await Promise.all(collectionCheckPromises)
+            const collectionIds = collectionResults
+                .filter(result => result.isValid)
+                .map(result => result.id)
+
             if (collectionIds.length === 0) {
                 return {
                     collections: [],
@@ -131,17 +154,21 @@ export class CollectionsService {
                 }
             }
 
-            const collections: Collection[] = []
-            for (const collectionId of collectionIds) {
+            const collectionPromises = collectionIds.map(async (collectionId) => {
                 try {
                     const collection = await this.getCollection(collectionId.toString())
                     if (collection && this.matchesFilters(collection, filters)) {
-                        collections.push(collection)
+                        return collection
                     }
+                    return null
                 } catch (error) {
                     console.error(`Error fetching collection ${collectionId}:`, error)
+                    return null
                 }
-            }
+            })
+
+            const collectionFetchResults = await Promise.all(collectionPromises)
+            const collections = collectionFetchResults.filter((collection): collection is Collection => collection !== null)
 
             const sortedCollections = this.sortCollections(collections, filters.sortBy)
 
@@ -169,44 +196,6 @@ export class CollectionsService {
     }
 
     /**
-     * Discover collection IDs by listing all tokens and extracting unique collection IDs
-     */
-    private async discoverCollectionIds(): Promise<number[]> {
-        try {
-            if (!this.contract) return []
-
-            const tokenIds = await this.contract.call("list_all_tokens", [])
-            
-            if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
-                return []
-            }
-
-            console.log(`Found ${tokenIds.length} tokens, extracting collection IDs...`)
-            const collectionIdSet = new Set<number>()
-
-            // Get collection ID for each token
-             for (const tokenId of tokenIds.slice(0, 50)) { // Limit to first 50 tokens to avoid too many calls
-                 try {
-                     const token = await this.contract.call("get_token", [tokenId]) as any
-                     if (token && token.collection_id) {
-                         const collectionId = Number(token.collection_id)
-                         collectionIdSet.add(collectionId)
-                     }
-                 } catch (error) {
-                     console.error(`Error getting token ${tokenId}:`, error)
-                 }
-             }
-
-            const uniqueCollectionIds = Array.from(collectionIdSet)
-            console.log(`Collection discovery complete: Found ${uniqueCollectionIds.length} unique collections from ${tokenIds.length} tokens`)
-            return uniqueCollectionIds
-        } catch (error) {
-            console.error("Error discovering collection IDs:", error)
-            return []
-        }
-    }
-
-    /**
      * Get collections owned by a specific user
      */
     public async getUserCollections(userAddress: string): Promise<Collection[]> {
@@ -226,8 +215,7 @@ export class CollectionsService {
             if (Array.isArray(collectionIds) && collectionIds.length > 0) {
                 for (const id of collectionIds) {
                     try {
-                        const collectionResult = await this.contract.call("get_collection", [id])
-                        const collection = await this.parseCollectionData(collectionResult, Number(id))
+                        const collection = await this.getCollection(id.toString())
                         if (collection) {
                             collections.push(collection)
                         }
@@ -255,14 +243,13 @@ export class CollectionsService {
 
             const id = Number(collectionId)
             
-            // First check if the collection is valid
             const isValid = await this.contract.call("is_valid_collection", [id])
             if (!isValid) {
                 console.log(`Collection ${id} is not valid`)
                 return null
             }
 
-            const collectionResult = await this.contract.call("get_collection", [id])
+            const collectionResult = await this.contract.call("get_collection", [id]) as ContractCollection
             return await this.parseCollectionData(collectionResult, id)
         } catch (error) {
             console.error(`Error fetching collection ${collectionId}:`, error)
@@ -272,6 +259,8 @@ export class CollectionsService {
 
     /**
      * Get assets in a specific collection
+     * Note: Since there's no direct list_collection_tokens function,
+     * we need to iterate through potential token IDs or track them through events
      */
     public async getCollectionAssets(collectionId: string): Promise<AssetIP[]> {
         try {
@@ -279,22 +268,53 @@ export class CollectionsService {
                 return []
             }
 
-            const id = Number(collectionId)
-            const tokenIds = await this.contract.call("list_collection_tokens", [id])
             const assets: AssetIP[] = []
+            const id = Number(collectionId)
 
-            if (Array.isArray(tokenIds) && tokenIds.length > 0) {
-                                 for (const tokenId of tokenIds) {
-                     try {
-                         const token = await this.contract.call("get_token", [tokenId]) as any
-                         const asset = await this.parseTokenToAsset(token, tokenId)
-                         if (asset) {
-                             assets.push(asset)
-                         }
-                     } catch (error) {
-                         console.error(`Error processing token ${tokenId}:`, error)
-                     }
-                 }
+            // Get collection stats to determine the range of token IDs
+            let totalMinted = 0
+            try {
+                const stats = await this.contract.call("get_collection_stats", [id]) as CollectionStats
+                totalMinted = Number(stats.total_minted)
+            } catch (statsError) {
+                console.warn(`Could not fetch stats for collection ${id}, using fallback range:`, statsError)
+                totalMinted = 100
+            }
+
+            const maxTokensToCheck = Math.max(totalMinted, 100)
+            
+            const tokenCheckPromises = Array.from({ length: maxTokensToCheck }, (_, index) => {
+                const tokenIndex = index + 1
+                const tokenIdentifier = `${id}:${tokenIndex}`
+                
+                return this.contract!.call("is_valid_token", [tokenIdentifier])
+                    .then(async (isValidToken) => {
+                        if (!isValidToken) return null
+                        
+                        try {
+                            const token = await this.contract!.call("get_token", [tokenIdentifier]) as ContractToken
+                            if (Number(token.collection_id) === id) {
+                                return await this.parseTokenToAsset(token, tokenIdentifier)
+                            }
+                        } catch (error) {
+                            console.warn(`Error fetching token ${tokenIdentifier}:`, error)
+                        }
+                        return null
+                    })
+                    .catch(error => {
+                        console.warn(`Error checking token ${tokenIdentifier}:`, error)
+                        return null
+                    })
+            })
+
+            // Execute all token checks in parallel
+            const tokenResults = await Promise.all(tokenCheckPromises)
+            
+            // Filter out null results and add valid assets
+            for (const asset of tokenResults) {
+                if (asset) {
+                    assets.push(asset)
+                }
             }
 
             return assets
@@ -307,15 +327,15 @@ export class CollectionsService {
     /**
      * Parse a contract token to AssetIP format
      */
-    private async parseTokenToAsset(token: any, tokenId: any): Promise<AssetIP | null> {
+    private async parseTokenToAsset(token: ContractToken, tokenIdentifier: string): Promise<AssetIP | null> {
         try {
             // Start with basic asset structure
             let asset: AssetIP = {
-                id: tokenId.toString(),
-                slug: `asset-${tokenId}`,
-                title: `Asset ${tokenId}`,
+                id: tokenIdentifier,
+                slug: `asset-${tokenIdentifier}`,
+                title: `Asset ${tokenIdentifier}`,
                 author: token.owner || "Unknown",
-                description: `IP Asset with token ID ${tokenId}`,
+                description: `IP Asset with token identifier ${tokenIdentifier}`,
                 type: "digital art", // Default fallback, will be updated from IPFS metadata
                 template: "default",
                 collection: token.collection_id?.toString() || "unknown",
@@ -344,17 +364,17 @@ export class CollectionsService {
                 timestamp: new Date().toISOString(),
                 blockchain: "Starknet",
                 contractAddress: MIP_COLLECTIONS_CONTRACT,
-                tokenId: tokenId.toString(),
+                tokenId: token.token_id?.toString() || tokenIdentifier,
                 metadataUri: token.metadata_uri
             }
 
             // Try to fetch metadata from IPFS using metadata_uri
             if (token.metadata_uri) {
-                console.log(`Fetching IPFS metadata for token ${tokenId} from:`, token.metadata_uri)
+                console.log(`Fetching IPFS metadata for token ${tokenIdentifier} from:`, token.metadata_uri)
                 try {
                     const metadata = await this.fetchIPFSMetadata(token.metadata_uri)
                     if (metadata) {
-                        console.log(`Successfully fetched metadata for token ${tokenId}:`, metadata)
+                        console.log(`Successfully fetched metadata for token ${tokenIdentifier}:`, metadata)
                         
                         // Update asset with IPFS metadata
                         asset.title = metadata.name || asset.title
@@ -362,15 +382,48 @@ export class CollectionsService {
                         asset.mediaUrl = this.processImageData(metadata.image)
                         asset.externalUrl = metadata.external_url || asset.externalUrl
                         
-                        // Handle asset type based on metadata - prioritize 'type' field over 'category'
-                        const assetType = metadata.type || metadata.category
-                        if (assetType) {
-                            asset.type = assetType.toLowerCase()
-                        }
-                        
-                        // Handle tags
-                        if (metadata.tags && Array.isArray(metadata.tags)) {
-                            asset.tags = metadata.tags.join(", ")
+                        // Handle asset type and tags from attributes
+                        if (metadata.attributes && Array.isArray(metadata.attributes)) {
+                            const typeAttr = metadata.attributes.find(attr => attr.trait_type.toLowerCase() === 'type' || attr.trait_type.toLowerCase() === 'category')
+                            if (typeAttr) {
+                                asset.type = typeAttr.value.toLowerCase()
+                            }
+                            
+                            const tagAttrs = metadata.attributes.filter(attr => attr.trait_type.toLowerCase() === 'tag')
+                            if (tagAttrs.length > 0) {
+                                asset.tags = tagAttrs.map(attr => attr.value).join(", ")
+                            }
+                            
+                            // Handle IP-specific data from attributes
+                            const licenseTypeAttr = metadata.attributes.find(attr => attr.trait_type.toLowerCase() === 'license_type')
+                            if (licenseTypeAttr) {
+                                asset.licenseType = licenseTypeAttr.value
+                            }
+                            
+                            const licenseDetailsAttr = metadata.attributes.find(attr => attr.trait_type.toLowerCase() === 'license_details')
+                            if (licenseDetailsAttr) {
+                                asset.licenseDetails = licenseDetailsAttr.value
+                            }
+                            
+                            const ipVersionAttr = metadata.attributes.find(attr => attr.trait_type.toLowerCase() === 'ip_version')
+                            if (ipVersionAttr) {
+                                asset.ipVersion = ipVersionAttr.value
+                            }
+                            
+                            const commercialUseAttr = metadata.attributes.find(attr => attr.trait_type.toLowerCase() === 'commercial_use')
+                            if (commercialUseAttr) {
+                                asset.commercialUse = commercialUseAttr.value.toLowerCase() === 'true'
+                            }
+                            
+                            const modificationsAttr = metadata.attributes.find(attr => attr.trait_type.toLowerCase() === 'modifications')
+                            if (modificationsAttr) {
+                                asset.modifications = modificationsAttr.value.toLowerCase() === 'true'
+                            }
+                            
+                            const attributionAttr = metadata.attributes.find(attr => attr.trait_type.toLowerCase() === 'attribution')
+                            if (attributionAttr) {
+                                asset.attribution = attributionAttr.value.toLowerCase() === 'true'
+                            }
                         }
                         
                         // Update slug to be more descriptive
@@ -379,27 +432,11 @@ export class CollectionsService {
                                 .replace(/[^a-z0-9]+/g, '-')
                                 .replace(/^-+|-+$/g, '') || asset.slug
                         }
-                        
-                        // Handle additional properties for IP-specific data
-                        if (metadata.properties) {
-                            asset.licenseType = metadata.properties.license_type || asset.licenseType
-                            asset.licenseDetails = metadata.properties.license_details || asset.licenseDetails
-                            asset.ipVersion = metadata.properties.ip_version || asset.ipVersion
-                            asset.commercialUse = metadata.properties.commercial_use !== undefined 
-                                ? Boolean(metadata.properties.commercial_use) 
-                                : asset.commercialUse
-                            asset.modifications = metadata.properties.modifications !== undefined 
-                                ? Boolean(metadata.properties.modifications) 
-                                : asset.modifications
-                            asset.attribution = metadata.properties.attribution !== undefined 
-                                ? Boolean(metadata.properties.attribution) 
-                                : asset.attribution
-                        }
                     } else {
-                        console.warn(`Failed to fetch IPFS metadata for token ${tokenId}, using contract data`)
+                        console.warn(`Failed to fetch IPFS metadata for token ${tokenIdentifier}, using contract data`)
                     }
                 } catch (ipfsError) {
-                    console.warn(`IPFS fetch failed for token ${tokenId}:`, ipfsError)
+                    console.warn(`IPFS fetch failed for token ${tokenIdentifier}:`, ipfsError)
                     // Continue with contract data as fallback
                 }
             }
@@ -412,7 +449,9 @@ export class CollectionsService {
     }
 
     /**
-     * Get user tokens
+     * Get user tokens across all collections
+     * Note: Since there's no direct list_user_tokens function,
+     * we need to iterate through collections and use list_user_tokens_per_collection
      */
     public async getUserTokens(userAddress: string): Promise<AssetIP[]> {
         try {
@@ -425,21 +464,32 @@ export class CollectionsService {
                 throw new Error("Invalid user address")
             }
 
-            const tokenIds = await this.contract.call("list_user_tokens", [validAddress])
             const assets: AssetIP[] = []
 
-            if (Array.isArray(tokenIds) && tokenIds.length > 0) {
-                    for (const tokenId of tokenIds) {
-                     try {
-                         const token = await this.contract.call("get_token", [tokenId]) as any
-                         const asset = await this.parseTokenToAsset(token, tokenId)
-                         if (asset) {
-                             assets.push(asset)
-                         }
-                     } catch (error) {
-                         console.error(`Error processing user token ${tokenId}:`, error)
-                     }
-                 }
+            const userCollections = await this.getUserCollections(userAddress)
+            
+            for (const collection of userCollections) {
+                try {
+                    const collectionId = Number(collection.id)
+                    const tokenIds = await this.contract.call("list_user_tokens_per_collection", [collectionId, validAddress])
+                    
+                    if (Array.isArray(tokenIds) && tokenIds.length > 0) {
+                        for (const tokenId of tokenIds) {
+                            try {
+                                const tokenIdentifier = `${collectionId}:${tokenId}`
+                                const token = await this.contract.call("get_token", [tokenIdentifier]) as ContractToken
+                                const asset = await this.parseTokenToAsset(token, tokenIdentifier)
+                                if (asset) {
+                                    assets.push(asset)
+                                }
+                            } catch (error) {
+                                console.error(`Error processing user token ${tokenId} in collection ${collectionId}:`, error)
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error fetching tokens for collection ${collection.id}:`, error)
+                }
             }
 
             return assets
@@ -473,9 +523,10 @@ export class CollectionsService {
     }
 
     /**
-     * Get token balance for a user
+     * Get token balance for a user in a specific collection
+     * Note: There's no direct balance_of function, so we count user tokens per collection
      */
-    public async getUserTokenBalance(userAddress: string): Promise<number> {
+    public async getUserTokenBalance(userAddress: string, collectionId?: string): Promise<number> {
         try {
             if (!this.contractAvailable || !this.contract) {
                 return 0
@@ -486,8 +537,16 @@ export class CollectionsService {
                 return 0
             }
 
-            const balance = await this.contract.call("balance_of", [validAddress])
-            return Number(balance) || 0
+            if (collectionId) {
+                // Get balance for specific collection
+                const id = Number(collectionId)
+                const tokenIds = await this.contract.call("list_user_tokens_per_collection", [id, validAddress])
+                return Array.isArray(tokenIds) ? tokenIds.length : 0
+            } else {
+                // Get total balance across all collections
+                const userTokens = await this.getUserTokens(userAddress)
+                return userTokens.length
+            }
         } catch (error) {
             console.error("Error getting user token balance:", error)
             return 0
@@ -506,22 +565,30 @@ export class CollectionsService {
 
             // Clean the IPFS hash (remove ipfs:// prefix if present)
             const cleanHash = ipfsHash.replace(/^ipfs:\/\//, '')
-            
-            // Try multiple IPFS gateways for better reliability
-            const gateways = [
-                `https://ipfs.io/ipfs/${cleanHash}`,
-                `https://gateway.pinata.cloud/ipfs/${cleanHash}`,
-                `https://cloudflare-ipfs.com/ipfs/${cleanHash}`,
-                `https://dweb.link/ipfs/${cleanHash}`
-            ]
+            // Use NEXT_PUBLIC_PINATA_GATEWAY if set, else try others
+            const pinataGateway = process.env.NEXT_PUBLIC_PINATA_GATEWAY
+                ? process.env.NEXT_PUBLIC_PINATA_GATEWAY.replace(/\/+$/, '') // remove trailing slash
+                : null
 
-            for (const gateway of gateways) {
+            const gateways = pinataGateway
+                ? [
+                    `${pinataGateway}/ipfs/${cleanHash}`,
+                ]
+                : [
+                    `https://ipfs.io/ipfs/${cleanHash}`,
+                    `https://gateway.pinata.cloud/ipfs/${cleanHash}`,
+                    `https://cloudflare-ipfs.com/ipfs/${cleanHash}`,
+                    `https://dweb.link/ipfs/${cleanHash}`
+                ]
+
+            // Create promises for all gateways in parallel
+            const gatewayPromises = gateways.map(async (gateway) => {
                 try {
-                    console.log(`Fetching IPFS metadata from: ${gateway}`)
+                    console.log(`Attempting to fetch IPFS metadata from: ${gateway}`)
                     
                     // Create a timeout controller for better browser compatibility
                     const controller = new AbortController()
-                    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+                    const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 second timeout per gateway
                     
                     const response = await fetch(gateway, {
                         headers: {
@@ -533,21 +600,30 @@ export class CollectionsService {
                     clearTimeout(timeoutId)
 
                     if (!response.ok) {
-                        console.warn(`IPFS gateway ${gateway} returned ${response.status}`)
-                        continue
+                        throw new Error(`Gateway returned ${response.status}`)
                     }
 
                     const metadata = await response.json()
-                    console.log("Successfully fetched IPFS metadata:", metadata)
-                    return metadata as CollectionMetadata
+                    return { gateway, metadata: metadata as CollectionMetadata, success: true }
                 } catch (gatewayError) {
-                    if (gatewayError instanceof Error && gatewayError.name === 'AbortError') {
-                        console.warn(`Timeout fetching from gateway ${gateway}`)
-                    } else {
-                        console.warn(`Failed to fetch from gateway ${gateway}:`, gatewayError)
-                    }
-                    continue
+                    const errorType = gatewayError instanceof Error && gatewayError.name === 'AbortError' ? 'timeout' : 'error'
+                    console.warn(`${errorType} fetching from gateway ${gateway}:`, gatewayError)
+                    return { gateway, metadata: null, success: false, error: gatewayError }
                 }
+            })
+
+            // Use Promise.allSettled to wait for all attempts, but return first successful result
+            try {
+                const results = await Promise.allSettled(gatewayPromises)
+                
+                for (const result of results) {
+                    if (result.status === 'fulfilled' && result.value.success && result.value.metadata) {
+                        console.log(`Successfully fetched IPFS metadata from: ${result.value.gateway}`)
+                        return result.value.metadata
+                    }
+                }
+            } catch (error) {
+                console.error("Error in parallel IPFS fetching:", error)
             }
 
             console.error("All IPFS gateways failed for hash:", cleanHash)
@@ -567,22 +643,18 @@ export class CollectionsService {
         // Convert to string first
         let addressStr = address.toString()
         
-        // If it's already hex with 0x prefix, return as is
         if (addressStr.startsWith('0x')) {
             return addressStr
         }
         
-        // If it's a decimal number, convert to hex
         if (/^\d+$/.test(addressStr)) {
             return `0x${BigInt(addressStr).toString(16)}`
         }
         
-        // If it's hex without 0x prefix, add it
         if (/^[a-fA-F0-9]+$/.test(addressStr)) {
             return `0x${addressStr}`
         }
         
-        // Fallback
         return addressStr.startsWith('0x') ? addressStr : `0x${addressStr}`
     }
 
@@ -605,7 +677,6 @@ export class CollectionsService {
                 return imageData
             }
 
-            // If it's an IPFS URL, convert to gateway URL
             if (imageData.startsWith('ipfs://')) {
                 const hash = imageData.replace('ipfs://', '')
                 return `https://ipfs.io/ipfs/${hash}`
@@ -627,57 +698,8 @@ export class CollectionsService {
         }
     }
 
-    /**
-     * Create a new collection
-     */
-    // public async createCollection(
-    //     name: string,
-    //     description: string,
-    //     coverImage: string,
-    //     category: string,
-    //     isPublic: boolean
-    // ): Promise<{ success: boolean; collectionId?: string; error?: string }> {
-    //     try {
-    //         if (!this.contractAvailable || !this.contract) {
-    //             return {
-    //                 success: false,
-    //                 error: "Contract not available"
-    //             }
-    //         }
-
-    //         console.log("Creating collection:", { name, description, coverImage, category, isPublic })
-
-    //         // The ABI shows create_collection takes: name, symbol, base_uri
-    //         // We'll use the name for both name and symbol, and coverImage as base_uri
-    //         const result = await this.contract.call("create_collection", [
-    //             name,          // name: ByteArray
-    //             name,          // symbol: ByteArray (using name as symbol for simplicity)
-    //             coverImage     // base_uri: ByteArray
-    //         ])
-
-    //         const collectionId = result?.toString() || "0"
-    //         console.log("Collection created with ID:", collectionId)
-            
-    //         return {
-    //             success: true,
-    //             collectionId
-    //         }
-    //     } catch (error) {
-    //         console.error("Error creating collection:", error)
-    //         return {
-    //             success: false,
-    //             error: error instanceof Error ? error.message : "Failed to create collection"
-    //         }
-    //     }
-    // }
-
-    /**
-     * Parse collection data from contract response
-     */
-    private async parseCollectionData(data: any, index: number): Promise<Collection | null> {
-        try {
-            console.log("Parsing collection data:", data)
-            
+    private async parseCollectionData(data: ContractCollection, index: number): Promise<Collection | null> {
+        try {           
             // Start with basic collection structure using contract data
             // Based on the ABI, Collection struct has: name, symbol, base_uri, owner, is_active
             let collection: Collection = {
@@ -719,10 +741,9 @@ export class CollectionsService {
                         collection.name = metadata.name || collection.name
                         collection.description = metadata.description || collection.description
                         
-                        // Handle cover image - check both 'image' and 'coverImage' fields
-                        const imageData = metadata.image || metadata.coverImage
-                        if (imageData) {
-                            collection.coverImage = this.processImageData(imageData)
+                        // Handle cover image
+                        if (metadata.image) {
+                            collection.coverImage = this.processImageData(metadata.image)
                         }
                         
                         // Handle banner image if available
@@ -730,10 +751,9 @@ export class CollectionsService {
                             collection.bannerImage = this.processImageData(metadata.banner_image)
                         }
                         
-                        // Handle type/category - prioritize 'type' field over 'category'
-                        const categoryType = metadata.type || metadata.category
-                        if (categoryType) {
-                            collection.category = categoryType.toLowerCase()
+                        // Handle category - use direct field
+                        if (metadata.category) {
+                            collection.category = metadata.category.toLowerCase()
                         }
                         
                         // Handle visibility/public status
@@ -741,27 +761,23 @@ export class CollectionsService {
                             collection.isPublic = metadata.visibility.toLowerCase() === 'public'
                         }
                         
-                        // Handle tags
+                        // Handle tags array
                         if (metadata.tags && Array.isArray(metadata.tags)) {
                             collection.tags = metadata.tags.join(", ")
                         }
                         
-                        // Handle featured status
-                        if (metadata.featured !== undefined) {
-                            collection.isFeatured = Boolean(metadata.featured)
-                        }
-                        
-                        if (metadata.createdAt) {
+                        // Handle created_at timestamp
+                        if (metadata.created_at) {
                             try {
-                                const parsedDate = new Date(metadata.createdAt)
+                                const parsedDate = new Date(metadata.created_at)
                                 if (!isNaN(parsedDate.getTime())) {
                                     collection.createdAt = parsedDate.toISOString()
                                     collection.updatedAt = parsedDate.toISOString()
                                 } else {
-                                    console.warn(`Invalid date format in IPFS metadata: ${metadata.createdAt}`)
+                                    console.warn(`Invalid date format in IPFS metadata: ${metadata.created_at}`)
                                 }
                             } catch (dateError) {
-                                console.warn(`Error parsing date from IPFS metadata: ${metadata.createdAt}`, dateError)
+                                console.warn(`Error parsing date from IPFS metadata: ${metadata.created_at}`, dateError)
                             }
                         }
                         
@@ -789,7 +805,7 @@ export class CollectionsService {
             try {
                 const stats = await this.contract!.call("get_collection_stats", [index]) as CollectionStats
                 if (stats) {
-                    collection.assets = Number(stats.minted || stats.total_supply || 0)
+                    collection.assets = Number(stats.total_minted || 0)
                 }
             } catch (statsError) {
                 console.warn(`Could not fetch stats for collection ${index}:`, statsError)
@@ -867,6 +883,8 @@ export class CollectionsService {
         })
     }
 
+
+
     /**
      * Check if the contract is available and initialized
      */
@@ -886,7 +904,8 @@ export class CollectionsService {
     }
 
     /**
-     * Get comprehensive collection statistics with proper token grouping validation
+     * Get comprehensive collection statistics using available ABI functions
+     * Note: Uses collection stats and user token enumeration since list_collection_tokens doesn't exist
      */
     public async getCollectionGroupingStats(collectionId: string): Promise<{
         collectionId: string
@@ -904,38 +923,52 @@ export class CollectionsService {
             const id = Number(collectionId)
             console.log("Getting comprehensive stats for collection:", id)
 
-            // Get all tokens in this collection
-            const tokenIds = await this.contract.call("list_collection_tokens", [id])
-            if (!Array.isArray(tokenIds)) {
-                return null
+            // Get basic collection stats first
+            const stats = await this.contract.call("get_collection_stats", [id]) as CollectionStats
+            const totalMinted = Number(stats.total_minted)
+            
+            if (totalMinted === 0) {
+                return {
+                    collectionId: collectionId,
+                    totalTokens: 0,
+                    uniqueOwners: 0,
+                    tokensByOwner: {},
+                    groupingValid: true,
+                    lastValidation: new Date().toISOString()
+                }
             }
 
-            // Validate grouping by checking each token's collection_id
             const tokensByOwner: Record<string, number> = {}
+            let actualTokenCount = 0
             let groupingValid = true
             
-            for (const tokenId of tokenIds) {
+            const maxCheck = Math.min(totalMinted, 200)
+            for (let tokenIndex = 1; tokenIndex <= maxCheck; tokenIndex++) {
                 try {
-                    const token = await this.contract.call("get_token", [tokenId]) as any
+                    const tokenIdentifier = `${id}:${tokenIndex}`
+                    const isValidToken = await this.contract.call("is_valid_token", [tokenIdentifier])
                     
-                    // Validate that token belongs to this collection
-                    if (Number(token.collection_id) !== id) {
-                        console.warn(`Grouping error: Token ${tokenId} reports collection ${token.collection_id} but found in collection ${id}`)
-                        groupingValid = false
+                    if (isValidToken) {
+                        const token = await this.contract.call("get_token", [tokenIdentifier]) as ContractToken
+                        
+                        if (Number(token.collection_id) !== id) {
+                            console.warn(`Grouping error: Token ${tokenIdentifier} reports collection ${token.collection_id} but found in collection ${id}`)
+                            groupingValid = false
+                        }
+                        
+                        const ownerAddress = this.formatAddressAsHex(token.owner)
+                        tokensByOwner[ownerAddress] = (tokensByOwner[ownerAddress] || 0) + 1
+                        actualTokenCount++
                     }
-                    
-                    // Count tokens by owner
-                    const ownerAddress = this.formatAddressAsHex(token.owner)
-                    tokensByOwner[ownerAddress] = (tokensByOwner[ownerAddress] || 0) + 1
                 } catch (error) {
-                    console.error(`Error validating token ${tokenId}:`, error)
+                    console.warn(`Error checking token ${id}:${tokenIndex}:`, error)
                     groupingValid = false
                 }
             }
 
             return {
                 collectionId: collectionId,
-                totalTokens: tokenIds.length,
+                totalTokens: actualTokenCount,
                 uniqueOwners: Object.keys(tokensByOwner).length,
                 tokensByOwner,
                 groupingValid,
@@ -948,5 +981,4 @@ export class CollectionsService {
     }
 }
 
-// Export singleton instance
 export const collectionsService = new CollectionsService() 

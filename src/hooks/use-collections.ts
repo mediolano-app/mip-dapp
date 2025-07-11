@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { collectionsService, type CollectionFilters, type PaginatedCollections } from '@/src/lib/collections-service'
+import { collectionsService, type CollectionFilters, type PaginatedCollections } from '@/src/services/collections.service'
 import type { Collection } from '@/src/types/asset'
 import { collections as mockCollections } from '@/src/lib/mock-data'
 
-export type { CollectionFilters } from '@/src/lib/collections-service'
+export type { CollectionFilters } from '@/src/services/collections.service'
 
 export interface UseCollectionsOptions {
     filters?: CollectionFilters
@@ -30,21 +30,6 @@ export interface UseCollectionsReturn {
     loadMore: () => Promise<void>
     setFilters: (filters: CollectionFilters) => void
     setPage: (page: number) => void
-    createCollection: (data: CreateCollectionData) => Promise<CreateCollectionResult>
-}
-
-export interface CreateCollectionData {
-    name: string
-    description: string
-    coverImage: string
-    category: string
-    isPublic: boolean
-}
-
-export interface CreateCollectionResult {
-    success: boolean
-    collectionId?: string
-    error?: string
 }
 
 /**
@@ -67,15 +52,12 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
     const [total, setTotal] = useState(0)
     const [hasMore, setHasMore] = useState(false)
     
-    // Circuit breaker to prevent infinite retries
     const fetchingRef = useRef(false)
     const lastFetchParamsRef = useRef<string>('')
     const errorCountRef = useRef(0)
-    const MAX_RETRIES = 3
+    const MAX_RETRIES = 2
 
-    // Memoized filtered collections for client-side filtering 
     const filteredCollections = useMemo(() => {
-        // Apply client-side filtering 
         let filtered = [...collections]
 
         if (currentFilters.search) {
@@ -145,7 +127,6 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
         return filteredCollections.reduce((sum, collection) => sum + (collection.likes || 0), 0)
     }, [filteredCollections])
 
-    // Fetch collections function with circuit breaker - only fetches raw data, no filtering
     const fetchCollections = useCallback(async (pageNum: number = 1, append: boolean = false) => {
         // Create unique key for this fetch request (only based on pagination, not filters)
         const fetchKey = `${pageNum}`
@@ -162,10 +143,9 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
             return
         }
 
-        // Circuit breaker: stop retrying after max failures
         if (errorCountRef.current >= MAX_RETRIES) {
             console.log(`Max retries (${MAX_RETRIES}) reached, stopping fetch attempts`)
-            setError('Unable to connect to contract. Please check your network connection.')
+            setError('Unable to load collections. The service may be temporarily unavailable.')
             return
         }
 
@@ -178,9 +158,8 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
         setError(null)
 
         try {
-            // Fetch all collections without server-side filtering for better client-side performance
-            console.log('Fetching general collections...', userAddress ? `(wallet connected: ${userAddress})` : '(no wallet connected)')
-            const result = await collectionsService.getCollections({}, pageNum, limit) // No filters passed to server
+            console.log('Fetching collections...', userAddress ? `(wallet: ${userAddress})` : '(no wallet)')
+            const result = await collectionsService.getCollections({}, pageNum, limit)
             
             if (append) {
                 setCollections(prev => [...prev, ...result.collections])
@@ -189,18 +168,16 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
             }
             setTotal(result.total)
             setHasMore(result.hasMore)
-            errorCountRef.current = 0 // Reset error count on success
+            errorCountRef.current = 0
             
-            // TODO: In the future, we could add user-specific filtering or additional user collections here
-            // when userAddress is available, but for now we show all public collections
+
         } catch (err) {
             console.error('Error fetching collections:', err)
             errorCountRef.current += 1
             
             const errorMessage = err instanceof Error ? err.message : 'Failed to fetch collections'
-            setError(`${errorMessage} (Attempt ${errorCountRef.current}/${MAX_RETRIES})`)
+            setError(errorCountRef.current === 1 ? errorMessage : `${errorMessage} (Retry ${errorCountRef.current}/${MAX_RETRIES})`)
             
-            // Set empty state on error
             if (!append) {
                 setCollections([])
                 setTotal(0)
@@ -210,9 +187,8 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
             setIsLoading(false)
             fetchingRef.current = false
         }
-    }, [limit, userAddress]) // Removed currentFilters dependency to prevent reloads on filter changes
+    }, [limit, userAddress])
 
-    // Load more collections (pagination)
     const loadMore = useCallback(async () => {
         if (hasMore && !fetchingRef.current) {
             const nextPage = page + 1
@@ -221,14 +197,11 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
         }
     }, [hasMore, page, fetchCollections])
 
-    // Set filters - now purely client-side, no server reload
     const setFilters = useCallback((newFilters: CollectionFilters) => {
         console.log('Setting new filters (client-side only):', newFilters)
         setCurrentFilters(newFilters)
-        // No need to reset page or refetch data - filtering is done client-side
     }, [])
 
-    // Fetch user collections
     const fetchUserCollections = useCallback(async () => {
         if (!userAddress) {
             setUserCollections([])
@@ -245,43 +218,37 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
         }
     }, [userAddress])
 
-    // Set page and refetch
     const setPageAndFetch = useCallback((newPage: number) => {
         setPage(newPage)
         fetchCollections(newPage, false)
     }, [fetchCollections])
 
-    // Refetch collections
     const refetch = useCallback(async () => {
         console.log('Manual refetch requested')
         setPage(1)
-        setCollections([])
-        setUserCollections([]) // Also clear user collections
-        errorCountRef.current = 0 // Reset error count on manual refetch
-        lastFetchParamsRef.current = '' // Reset fetch params
-        await fetchCollections(1, false)
+        errorCountRef.current = 0
+        lastFetchParamsRef.current = ''
+        
+        const fetchPromises = [fetchCollections(1, false)]
         if (userAddress) {
-            await fetchUserCollections() // Also refetch user collections if user is connected
+            fetchPromises.push(fetchUserCollections())
+        }
+        
+        setCollections([])
+        setUserCollections([])
+        
+        try {
+            await Promise.all(fetchPromises)
+        } catch (error) {
+            console.error('Error during parallel refetch:', error)
         }
     }, [fetchCollections, fetchUserCollections, userAddress])
 
-    // Create collection function (placeholder - service method doesn't exist yet)
-    const createCollection = useCallback(async (data: CreateCollectionData): Promise<CreateCollectionResult> => {
-        // TODO: Implement when service method is available
-        console.warn('Create collection not implemented yet')
-        return {
-            success: false,
-            error: 'Create collection functionality not implemented yet'
-        }
-    }, [])
-
-    // Fetch collections only on mount and when essential parameters change
     useEffect(() => {
         console.log('useEffect triggered - fetching collections...')
         fetchCollections(1, false)
-    }, [limit, userAddress]) // Only refetch when limit or userAddress changes, not filters
+    },  [fetchCollections])  
 
-    // Fetch user collections when userAddress changes
     useEffect(() => {
         fetchUserCollections()
     }, [fetchUserCollections])
@@ -303,8 +270,7 @@ export function useCollections(options: UseCollectionsOptions = {}): UseCollecti
         refetch,
         loadMore,
         setFilters,
-        setPage: setPageAndFetch,
-        createCollection
+        setPage: setPageAndFetch
     }
 }
 
@@ -334,8 +300,7 @@ export function useCollection(collectionIdentifier: string) {
             // If not found by ID or identifier is not numeric, search by slug
             if (!result) {
                 console.log(`Searching for collection by slug: ${collectionIdentifier}`)
-                // Get all collections and find by slug
-                const allCollectionsResult = await collectionsService.getCollections({}, 1, 100) // Get first 100 collections
+                const allCollectionsResult = await collectionsService.getCollections({}, 1, 100)
                 result = allCollectionsResult.collections.find(c => c.slug === collectionIdentifier) || null
                 
                 if (!result) {

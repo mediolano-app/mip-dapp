@@ -432,7 +432,7 @@ export function IPCollectionBrowser({
 
         return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 hover:scale-105 transition-transform duration-300">
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 transition-transform duration-300">
                     <CardContent className="p-4 text-center">
                         <FolderOpen className="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
                         <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
@@ -442,7 +442,7 @@ export function IPCollectionBrowser({
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 hover:scale-105 transition-transform duration-300">
+                <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 transition-transform duration-300">
                     <CardContent className="p-4 text-center">
                         <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto mb-2" />
                         <div className="text-lg font-bold text-green-900 dark:text-green-100">
@@ -452,7 +452,7 @@ export function IPCollectionBrowser({
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 hover:scale-105 transition-transform duration-300">
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 transition-transform duration-300">
                     <CardContent className="p-4 text-center">
                         <Eye className="w-6 h-6 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
                         <div className="text-lg font-bold text-purple-900 dark:text-purple-100">
@@ -462,7 +462,7 @@ export function IPCollectionBrowser({
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800 hover:scale-105 transition-transform duration-300">
+                <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800 transition-transform duration-300">
                     <CardContent className="p-4 text-center">
                         <Heart className="w-6 h-6 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
                         <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
