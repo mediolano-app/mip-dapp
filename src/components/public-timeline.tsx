@@ -1,5 +1,6 @@
 'use client'; 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { fetchLatestAssets, PublicTimelineAsset } from '../services/public-timeline.service';
 
 // Types for asset metadata
 interface IPAssetMetadata {
@@ -16,11 +17,46 @@ interface IPAssetMetadata {
 
 // Placeholder for asset card
 const IPAssetCard: React.FC<{ asset: IPAssetMetadata }> = ({ asset }) => {
+  const [mediaError, setMediaError] = React.useState(false);
+  let mediaContent = null;
+  if (asset.mediaUrl && !mediaError) {
+    if (asset.mediaType === 'image') {
+      mediaContent = (
+        <img
+          src={asset.mediaUrl}
+          alt={asset.title}
+          onError={() => setMediaError(true)}
+          style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 8 }}
+        />
+      );
+    } else if (asset.mediaType === 'video') {
+      mediaContent = (
+        <video
+          src={asset.mediaUrl}
+          controls
+          onError={() => setMediaError(true)}
+          style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 8 }}
+        />
+      );
+    } else if (asset.mediaType === 'audio') {
+      mediaContent = (
+        <audio
+          src={asset.mediaUrl}
+          controls
+          onError={() => setMediaError(true)}
+          style={{ width: '100%' }}
+        />
+      );
+    }
+  }
   return (
     <div className="ip-asset-card">
       <div className="media">
-        {/* Media rendering logic will go here */}
-        <span>{asset.mediaType.toUpperCase()}</span>
+        {mediaContent || (
+          <div className="media-fallback">
+            <span>{mediaError ? 'Media failed to load' : asset.mediaType.toUpperCase()}</span>
+          </div>
+        )}
       </div>
       <div className="meta">
         <h3>{asset.title}</h3>
@@ -88,27 +124,26 @@ export const PublicTimeline: React.FC = () => {
   const observer = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  // Fetch assets (placeholder, to be replaced with real fetch logic)
+
+  // Fetch assets from Mediolano Protocol + IPFS
   const fetchAssets = useCallback(async (pageNum: number, filterType: string) => {
     setLoading(true);
     setError(null);
     try {
-      // TODO: Replace with real fetch from Mediolano Protocol + IPFS
-      // Simulate network delay and data
-      await new Promise(res => setTimeout(res, 1000));
-      const fakeAssets: IPAssetMetadata[] = Array.from({ length: 10 }, (_, i) => ({
-        id: `${pageNum}-${i}`,
-        author: `0xAuthor${i}`,
-        title: `Sample Asset ${pageNum * 10 + i + 1}`,
-        description: 'This is a sample description.',
-        license: 'CC-BY-4.0',
-        mediaUrl: '',
-        mediaType: ['image', 'video', 'audio', 'other'][i % 4] as any,
-        timestamp: new Date(Date.now() - (pageNum * 10 + i) * 60000).toISOString(),
-        assetType: ['art', 'music', 'docs', 'other'][i % 4] as any,
-      })).filter(a => filterType === 'all' || a.assetType === filterType);
-      setAssets(prev => [...prev, ...fakeAssets]);
-      setHasMore(fakeAssets.length > 0);
+      const realAssets = await fetchLatestAssets({ page: pageNum, pageSize: 10, filterType });
+      const mappedAssets: IPAssetMetadata[] = realAssets.map((a: PublicTimelineAsset) => ({
+        id: a.tokenId,
+        author: a.metadata?.author || 'Unknown',
+        title: a.metadata?.title || 'Untitled',
+        description: a.metadata?.description || '',
+        license: a.metadata?.license || '',
+        mediaUrl: a.metadata?.mediaUrl || '',
+        mediaType: a.metadata?.mediaType || 'other',
+        timestamp: a.metadata?.timestamp || '',
+        assetType: a.metadata?.assetType || 'other',
+      }));
+      setAssets(prev => [...prev, ...mappedAssets]);
+      setHasMore(realAssets.length > 0);
     } catch (err) {
       setError('Failed to load assets.');
     } finally {
