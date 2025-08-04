@@ -142,7 +142,11 @@ export const PublicTimeline: React.FC = () => {
         timestamp: a.metadata?.timestamp || '',
         assetType: a.metadata?.assetType || 'other',
       }));
-      setAssets(prev => [...prev, ...mappedAssets]);
+      setAssets(prev => {
+        const ids = new Set(prev.map(a => a.id));
+        const newUnique = mappedAssets.filter(a => !ids.has(a.id));
+        return [...prev, ...newUnique];
+      });
       setHasMore(realAssets.length > 0);
     } catch (err) {
       setError('Failed to load assets.');
@@ -192,7 +196,7 @@ export const PublicTimeline: React.FC = () => {
         {assets.length === 0 && !loading && !error && <EmptyState />}
         {error && <ErrorState message={error} />}
         {assets.map(asset => (
-          <IPAssetCard asset={asset} key={asset.id} />
+          <IPAssetCard asset={asset} key={`${asset.id}-${asset.mediaUrl || ''}`} />
         ))}
       </div>
       <div ref={loadMoreRef} style={{ height: 1 }} />

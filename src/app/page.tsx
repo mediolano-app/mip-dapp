@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { Timeline } from "@/src/components/timeline"
+import { PublicTimeline } from "@/src/components/public-timeline"
 import { Header } from "@/src/components/header"
 import { FloatingNavigation } from "@/src/components/floating-navigation"
 import { Card, CardContent } from "@/src/components/ui/card"
@@ -14,7 +14,7 @@ export default function HomePage() {
         <div className="px-4 pt-6 pb-8">
           <div className="max-w-2xl mx-auto">
             <Suspense fallback={<TimelineSkeleton />}>
-              <Timeline />
+              <PublicTimeline />
             </Suspense>
           </div>
         </div>
