@@ -7,6 +7,9 @@ export const CONTRACTS = {
   MEDIOLANO:
     process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_MIP ||
     "0x04b67deb64d285d3de684246084e74ad25d459989b7336786886ec63a28e0cd4",
+  COLLECTION_FACTORY:
+    process.env.NEXT_PUBLIC_COLLECTION_FACTORY_ADDRESS ||
+    "0x02f751e0c4f221ffcc5084af0d5f97af1d448670f57b48462d68318ea90e77e3",
 };
 
 export const provider = new RpcProvider({

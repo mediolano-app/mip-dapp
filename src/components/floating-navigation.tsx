@@ -8,7 +8,7 @@ import Link from "next/link"
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent } from "@/src/components/ui/card"
 import { Badge } from "@/src/components/ui/badge"
-import { Home, Plus, Briefcase, Activity, Menu, X, Sparkles, TrendingUp, FolderOpen } from "lucide-react"
+import { Home, Plus, Briefcase, Activity, Menu, X, Sparkles, TrendingUp, FolderOpen, Coins, Box } from "lucide-react"
 
 const navItems = [
   { href: "/", icon: Home, label: "Start", description: "Discover IP" },
@@ -72,11 +72,10 @@ export function FloatingNavigation() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-semibold text-foreground">Navigation</h3>
-                  <p className="text-xs text-muted-foreground">Quick access to all features</p>
+                  <h3 className="text-xs text-foreground">My Intellectual Property</h3>
+                  <p className="text-xs text-muted-foreground">Protect and tokenize onchain</p>
                 </div>
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                  <Sparkles className="w-3 h-3 mr-1" />
                   MIP
                 </Badge>
               </div>
@@ -122,14 +121,14 @@ export function FloatingNavigation() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-1 mb-1">
-                      <TrendingUp className="w-3 h-3 text-primary" />
+                      <Box className="w-3 h-3 text-primary" />
                       <span className="text-sm font-bold text-foreground">MIP</span>
                     </div>
                     <span className="text-xs text-muted-foreground">Protocol</span>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-1 mb-1">
-                      <FolderOpen className="w-3 h-3 text-orange-500" />
+                      <Coins className="w-3 h-3 text-green-500" />
                       <span className="text-sm font-bold text-foreground">Zero</span>
                     </div>
                     <span className="text-xs text-muted-foreground">Fees</span>

@@ -107,7 +107,7 @@ export default function CreateAssetView() {
     title: "",
     description: "",
     mediaUrl: "",
-    externalUrl: "",
+    externalUrl: "https://mip.mediolano.app",
 
     // Advanced fields with smart defaults
     type: "post", // Default to "Post" like social media
@@ -123,7 +123,7 @@ export default function CreateAssetView() {
     registrationDate: new Date().toISOString().split("T")[0],
     protectionStatus: "Protected",
     protectionScope: "Global",
-    protectionDuration: "Life + 70 years",
+    protectionDuration: "50~70 years",
     newTag: "",
   };
 
@@ -328,7 +328,7 @@ export default function CreateAssetView() {
                         />
                         {/* External URL - Primary Field */}
                         <TextInput
-                          placeholder="https://yourwebsite.com (optional)"
+                          placeholder="https://yourwebsite.com"
                           label="External URL"
                           name="externalUrl"
                           labelIcon={

@@ -8,19 +8,16 @@ It’s built using powerful tools that work behind the scenes to keep costs free
 
 MIP integrates Mediolano Protocol to enable instant tokenization and protection of creative works in accordance with the Berne Convention (1886), which spans 181 countries. This legal infrastructure guarantees global recognition of authorship and provides verifiable proof of ownership for 50 to 70 years, depending on the jurisdiction.
 
-> [!IMPORTANT]
 
-> MIP dapp is in constant development and the current version runs on Starknet's Sepolia devnet. Use for testing purposes only. 
-
-![mip-screen2 (1)](https://github.com/user-attachments/assets/07eb8b5c-ba61-4c22-9119-c838a3882e84)
+![mip-mobile-dapp](https://github.com/user-attachments/assets/a910cb00-cdb9-449b-a1a1-c9f8101a482a)
 
 
 
 # Mediolano - Programmable IP for the Integrity Web
 
-<a href="https://mediolano.xyz">Website mediolano.xyz</a>
-
 Governed by a DAO (Decentralized Autonomous Organization), Mediolano champions transparent, decentralized decision-making in alignment with core web3 and cypherpunk principles. Our mission is to foster long-term value and sustainability for the entire ecosystem—from users to partners—by operating in the collective interest of the network.
+
+<a href="https://mediolano.xyz">Website mediolano.xyz</a>
 
 
 ## Roadmap
@@ -129,9 +126,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 Quick links:
 <br>
-<a href="https://ip.mediolano.app">Mediolano Dapp (Sepolia)</a>
-<br>
-<a href="https://x.com/mediolanoapp">X / Twitter</a>
-<br>
+<a href="https://ip.mediolano.app">Mediolano Dapp</a><br>
+<a href="https://x.com/mediolanoapp">X / Twitter</a><br>
 <a href="https://t.me/MediolanoStarknet">Telegram</a>
-<br>

@@ -204,6 +204,10 @@ export const ip_collection_abi = [
           {
             "name": "recipient",
             "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "token_uri",
+            "type": "core::byte_array::ByteArray"
           }
         ],
         "outputs": [
@@ -224,6 +228,10 @@ export const ip_collection_abi = [
           {
             "name": "recipients",
             "type": "core::array::Array::<core::starknet::contract_address::ContractAddress>"
+          },
+          {
+            "name": "token_uris",
+            "type": "core::array::Array::<core::byte_array::ByteArray>"
           }
         ],
         "outputs": [

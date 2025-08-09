@@ -54,8 +54,6 @@ export function Pagination({
     return rangeWithDots
   }
 
-  if (totalPages <= 1) return null
-
   return (
     <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${className}`}>
       {/* Items info and per page selector */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { StarknetConfig, InjectedConnector, publicProvider } from '@starknet-react/core';
+import { StarknetConfig, InjectedConnector, jsonRpcProvider } from '@starknet-react/core';
 import { mainnet } from '@starknet-react/chains';
 import type { ReactNode } from 'react';
 
@@ -10,10 +10,11 @@ const connectors = [
 ];
 
 export default function StarknetProviderWrapper({ children }: { children: ReactNode }) {
+  const nodeUrl = process.env.NEXT_PUBLIC_STARKNET_RPC_URL || 'https://starknet-mainnet.public.blastapi.io/rpc/v0_7';
   return (
     <StarknetConfig
       chains={[mainnet]}
-      provider={publicProvider()}
+      provider={jsonRpcProvider({ rpc: () => ({ nodeUrl }) })}
       connectors={connectors}
       autoConnect
     >

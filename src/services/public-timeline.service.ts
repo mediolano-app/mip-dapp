@@ -106,13 +106,43 @@ export async function fetchLatestAssets({
             hash = tokenURI;
           }
 
-          if (hash) {
-            metadata = await ipfsService.getFromIPFS(hash);
-          } else if (fetchDirectly) {
-            const response = await fetch(tokenURI, { headers: { 'Accept': 'application/json' } });
-            if (response.ok) {
-              metadata = await response.json();
+          // Enhanced IPFS fetching logic 
+          let url = tokenURI;
+          if (tokenURI.startsWith('ipfs://')) {
+            url = 'https://ipfs.io/ipfs/' + tokenURI.replace('ipfs://', '');
+          } else if (tokenURI.startsWith('Qm') || tokenURI.startsWith('bafy') || tokenURI.startsWith('bafk')) {
+            url = 'https://ipfs.io/ipfs/' + tokenURI;
+          } else if (tokenURI.includes('/ipfs/')) {
+            url = tokenURI;
+          } else if (tokenURI.startsWith('http://') || tokenURI.startsWith('https://')) {
+            url = tokenURI;
+          } else {
+            url = tokenURI;
+          }
+
+          try {
+            const response = await fetch(url, {
+              method: 'GET',
+              headers: { 'Accept': 'application/json, image/*, */*' },
+              signal: AbortSignal.timeout(10000)
+            });
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.startsWith('image/')) {
+              metadata = null;
+            } else {
+              const text = await response.text();
+              if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                metadata = JSON.parse(text);
+              } else {
+                metadata = null;
+              }
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch metadata for token ${tokenId}:`, err);
+            metadata = null;
           }
         } catch (err) {
           console.warn(`Failed to fetch metadata for token ${tokenId}:`, err);

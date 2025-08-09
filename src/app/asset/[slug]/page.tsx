@@ -328,7 +328,7 @@ export default function AssetPage() {
                     </DropdownMenu>
                   </div>
 
-                  {/* Creator Info */}
+                  {/* Creator Info 
                   <Card className="bg-muted/20 border-border/30">
                     <CardContent className="p-4">
                       <div className="flex items-center space-x-3">
@@ -360,6 +360,7 @@ export default function AssetPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  */}
                 </div>
 
                 {/* Asset Information */}
@@ -398,7 +399,7 @@ export default function AssetPage() {
                             rel="noopener noreferrer"
                             className="text-primary hover:underline text-sm"
                           >
-                            View External Resource
+                            View
                           </a>
                         </div>
                       </div>
@@ -408,7 +409,7 @@ export default function AssetPage() {
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/30">
                       <div className="text-center">
                         <div className="text-lg font-bold text-foreground">{asset.registrationDate || "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground">Registered</div>
+                        <div className="text-xs text-muted-foreground">Created</div>
                       </div>
                       <div className="text-center">
                         <div className="text-lg font-bold text-foreground">v{asset.ipVersion || "1.0"}</div>
@@ -442,7 +443,7 @@ export default function AssetPage() {
                             {asset.protectionDuration || "Unknown Duration"}
                           </Badge>
                           <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
-                            Blockchain Verified
+                            Proof of Ownership
                           </Badge>
                         </div>
                       </div>
@@ -475,7 +476,7 @@ export default function AssetPage() {
               <TabsContent value="licensing" className="mt-6">
                 <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle>Licensing Information</CardTitle>
+                    <CardTitle>Licensing</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
@@ -629,12 +630,12 @@ export default function AssetPage() {
                         </div>
                         <div>
                           <Label className="text-sm text-muted-foreground">Blockchain</Label>
-                          <div className="font-medium text-foreground">{asset.blockchain || "Unknown"}</div>
+                          <div className="font-medium text-foreground">{asset.blockchain || "Starknet"}</div>
                         </div>
                         <div>
                           <Label className="text-sm text-muted-foreground">Contract Address</Label>
                           <div className="font-mono text-sm text-foreground">
-                            {asset.contractAddress || "0x1234...5678"}
+                            {asset.contractAddress || "0x02611360a62f6693231a38f8941b8f90d6d408a06a598a1f24532bb2fc09d314"}
                           </div>
                         </div>
                         <div>

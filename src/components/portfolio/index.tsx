@@ -86,10 +86,10 @@ export default function PortfolioView() {
       id: "current-user",
       username: "you",
       name: "You",
-      avatar: "/placeholder-user.jpg",
+      avatar: "/placeholder.svg",
       verified: true,
       wallet: publicKey || "",
-      bio: "NFT Owner",
+      bio: "Creator",
       followers: 0,
       following: 0,
       assets: portfolioAsset?.length,
@@ -155,7 +155,7 @@ export default function PortfolioView() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-foreground mb-2">
-                    My IP Portfolio
+                    My Portfolio
                   </h1>
                   <p className="text-muted-foreground">
                     Manage your tokenized intellectual property

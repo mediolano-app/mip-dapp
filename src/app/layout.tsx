@@ -14,6 +14,7 @@ import {
 } from "@clerk/nextjs";
 import Link from "next/link";
 import { Providers } from "./providers";
+import StarknetProviderWrapper from "./StarknetProviderWrapper"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!} signInFallbackRedirectUrl="/" signUpFallbackRedirectUrl="/" afterSignOutUrl="/">
       <Providers>
+        <StarknetProviderWrapper>
         <html lang="en" suppressHydrationWarning>
           <body className={inter.className}>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
@@ -41,8 +43,9 @@ export default function RootLayout({
               <FloatingNavigation />
               <Toaster />
             </ThemeProvider>
-          </body>
-        </html>
+            </body>
+          </html>
+        </StarknetProviderWrapper>
       </Providers>
     </ClerkProvider>
   )
