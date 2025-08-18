@@ -35,7 +35,13 @@ export async function fetchLatestAssets({
 
   try {
     const totalSupplyResult = await contract.call('total_supply');
-    totalSupply = Number(uint256.uint256ToBN(totalSupplyResult));
+    // Extract the Uint256 value from the result object
+    const totalSupplyUint256 = Array.isArray(totalSupplyResult)
+      ? totalSupplyResult[0]
+      : (typeof totalSupplyResult === 'object' && totalSupplyResult !== null && 'total_supply' in totalSupplyResult)
+        ? (totalSupplyResult as any).total_supply
+        : totalSupplyResult;
+    totalSupply = Number(uint256.uint256ToBN(totalSupplyUint256));
   } catch (err) {
     console.error('Failed to fetch total_supply:', err);
     return [];
@@ -48,7 +54,13 @@ export async function fetchLatestAssets({
   for (let i = start; i >= end; i--) {
     try {
       const tokenIdResult = await contract.call('token_by_index', [uint256.bnToUint256(BigInt(i))]);
-      const tokenId = uint256.uint256ToBN(tokenIdResult).toString();
+      // Extract the Uint256 value from the result object
+      const tokenIdUint256 = Array.isArray(tokenIdResult)
+        ? tokenIdResult[0]
+        : (typeof tokenIdResult === 'object' && tokenIdResult !== null && 'token_id' in tokenIdResult)
+          ? (tokenIdResult as any).token_id
+          : tokenIdResult;
+      const tokenId = uint256.uint256ToBN(tokenIdUint256).toString();
 
       let tokenURI = '';
       try {
@@ -106,43 +118,85 @@ export async function fetchLatestAssets({
             hash = tokenURI;
           }
 
-          // Enhanced IPFS fetching logic 
-          let url = tokenURI;
-          if (tokenURI.startsWith('ipfs://')) {
-            url = 'https://ipfs.io/ipfs/' + tokenURI.replace('ipfs://', '');
-          } else if (tokenURI.startsWith('Qm') || tokenURI.startsWith('bafy') || tokenURI.startsWith('bafk')) {
-            url = 'https://ipfs.io/ipfs/' + tokenURI;
-          } else if (tokenURI.includes('/ipfs/')) {
-            url = tokenURI;
-          } else if (tokenURI.startsWith('http://') || tokenURI.startsWith('https://')) {
-            url = tokenURI;
-          } else {
-            url = tokenURI;
+          // Enhanced IPFS fetching logic with gateway fallbacks and tolerant parsing
+          const buildCandidateUrls = (uri: string): string[] => {
+            const candidates: string[] = [];
+            const gateways = [
+              'https://cloudflare-ipfs.com/ipfs/',
+              'https://ipfs.io/ipfs/',
+              'https://gateway.pinata.cloud/ipfs/',
+            ];
+
+            const toIpfsPaths = (rest: string) => gateways.map(g => g + rest.replace(/^\//, ''));
+
+            if (uri.startsWith('ipfs://')) {
+              const rest = uri.replace('ipfs://', '');
+              candidates.push(...toIpfsPaths(rest));
+            } else if (uri.includes('/ipfs/')) {
+              const parts = uri.split('/ipfs/');
+              const rest = parts[1]?.split('#')[0] ?? '';
+              candidates.push(...toIpfsPaths(rest), uri);
+            } else if (uri.startsWith('Qm') || uri.startsWith('bafy') || uri.startsWith('bafk')) {
+              candidates.push(...toIpfsPaths(uri));
+            } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
+              candidates.push(uri);
+            } else {
+              candidates.push(uri);
+            }
+
+            // De-duplicate while preserving order
+            return Array.from(new Set(candidates));
+          };
+
+          const candidates = buildCandidateUrls(tokenURI);
+
+          let successResponse: Response | null = null;
+          let lastError: unknown = null;
+
+          for (const tryUrl of candidates) {
+            try {
+              const res = await fetch(tryUrl, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json, image/*, */*' },
+                signal: AbortSignal.timeout(10000)
+              });
+              if (res.ok) {
+                successResponse = res;
+                break;
+              } else {
+                // Retry on non-OK responses (e.g., 404/415/422/5xx) by trying next gateway
+                lastError = new Error(`HTTP ${res.status}: ${res.statusText}`);
+                continue;
+              }
+            } catch (e) {
+              // Network error or timeout, try next candidate
+              lastError = e;
+              continue;
+            }
           }
 
-          try {
-            const response = await fetch(url, {
-              method: 'GET',
-              headers: { 'Accept': 'application/json, image/*, */*' },
-              signal: AbortSignal.timeout(10000)
-            });
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.startsWith('image/')) {
+          if (!successResponse) {
+            console.warn(`Failed to fetch metadata for token ${tokenId}:`, lastError);
+            metadata = null;
+          } else {
+            const contentType = successResponse.headers.get('content-type') || '';
+            if (contentType.startsWith('image/')) {
+              // TokenURI points directly to an image; no JSON metadata
               metadata = null;
             } else {
-              const text = await response.text();
-              if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                metadata = JSON.parse(text);
+              const text = await successResponse.text();
+              const trimmed = text.trim();
+              if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                try {
+                  metadata = JSON.parse(trimmed);
+                } catch (e) {
+                  console.warn(`Failed to parse JSON metadata for token ${tokenId}:`, e);
+                  metadata = null;
+                }
               } else {
                 metadata = null;
               }
             }
-          } catch (err) {
-            console.warn(`Failed to fetch metadata for token ${tokenId}:`, err);
-            metadata = null;
           }
         } catch (err) {
           console.warn(`Failed to fetch metadata for token ${tokenId}:`, err);

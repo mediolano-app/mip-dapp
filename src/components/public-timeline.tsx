@@ -1,6 +1,6 @@
 'use client'; 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { fetchLatestAssets, PublicTimelineAsset } from '../services/public-timeline.service';
+import type { PublicTimelineAsset } from '../services/public-timeline.service';
 
 // Types for asset metadata
 interface IPAssetMetadata {
@@ -130,7 +130,9 @@ export const PublicTimeline: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const realAssets = await fetchLatestAssets({ page: pageNum, pageSize: 10, filterType });
+      const res = await fetch(`/api/public-timeline?page=${pageNum}&pageSize=10&filterType=${filterType}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      const realAssets: PublicTimelineAsset[] = await res.json();
       const mappedAssets: IPAssetMetadata[] = realAssets.map((a: PublicTimelineAsset) => ({
         id: a.tokenId,
         author: a.metadata?.author || 'Unknown',
@@ -213,4 +215,3 @@ export const PublicTimeline: React.FC = () => {
 };
 
 export default PublicTimeline;
-3
