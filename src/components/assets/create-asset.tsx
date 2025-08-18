@@ -112,7 +112,7 @@ export default function CreateAssetView() {
     // Advanced fields with smart defaults
     type: "post", // Default to "Post" like social media
     tags: [] as string[],
-    author: "Anonymous Creator",
+    author: "",
     collection: collections[0].label, // Default to MIP Collection
     licenceType: licenseType[0],
     licenseDetails: "",

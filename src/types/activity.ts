@@ -64,7 +64,7 @@ export const activityColors = {
 
 export const statusColors = {
   completed: "bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20",
-  pending: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
+  pending: "bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/20",
   failed: "bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20",
 } as const
 

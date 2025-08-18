@@ -185,15 +185,14 @@ export function AssetTemplate({ asset }: AssetTemplateProps) {
           <div className="flex-1">
             <h3 className="text-xl font-bold text-foreground mb-2">{assetTypeDisplay} Asset</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              This {assetType.toLowerCase()} asset is protected under international copyright law with blockchain
-              verification.
+              This {assetType.toLowerCase()} asset is protected with Proof of Ownership blockchain verification.
             </p>
           </div>
         </div>
 
         {/* Asset Features */}
         <div className="mb-6">
-          <h4 className="font-semibold text-foreground mb-3">Asset Features</h4>
+          <h4 className="font-semibold text-foreground mb-3">Features</h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {config.features.map((feature, index) => (
               <div key={index} className="flex items-center space-x-2 text-sm">
@@ -253,7 +252,7 @@ export function AssetTemplate({ asset }: AssetTemplateProps) {
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Action Buttons 
         <div className="space-y-3">
           <h4 className="font-semibold text-foreground">Available Actions</h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -272,7 +271,7 @@ export function AssetTemplate({ asset }: AssetTemplateProps) {
               )
             })}
           </div>
-        </div>
+        </div>*/}
 
         {/* License Badge */}
         <div className="mt-6 pt-4 border-t border-border/50">

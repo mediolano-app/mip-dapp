@@ -175,7 +175,7 @@ export function Activities({
                   title="Pending"
                   value={stats.pending}
                   icon={Clock}
-                  color="amber"
+                  color="orange"
                   delay={200}
                 />
                 <StatsCard
@@ -327,7 +327,7 @@ interface StatsCardProps {
 function StatsCard({ title, value, icon: Icon, color, delay }: StatsCardProps) {
   return (
     <Card
-      className={`group relative overflow-hidden bg-gradient-to-br from-${color}-50/80 via-${color}-50/50 to-background dark:from-${color}-950/50 dark:via-${color}-950/30 dark:to-background border-${color}-200/50 dark:border-${color}-800/30 hover:shadow-xl hover:shadow-${color}-500/10 hover:scale-[1.02] transition-all duration-300 animate-fade-in-up`}
+      className={`group relative overflow-hidden bg-gradient-to-br from-${color}-50/80 via-${color}-50/50 to-background dark:from-${color}-950/50 dark:via-${color}-950/30 dark:to-background border-${color}-200/50 dark:border-${color}-800/30 transition-all duration-300 animate-fade-in-up`}
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className={`absolute inset-0 bg-gradient-to-br from-${color}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />

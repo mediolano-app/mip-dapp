@@ -3,6 +3,7 @@ import {
   Contract,
   validateAndParseAddress,
   uint256,
+  num,
 } from "starknet";
 import { ERC721_ABI } from "../abi/ERC721_ABI";
 import type {
@@ -27,6 +28,51 @@ export class StarkNetService {
   }
 
   /**
+   * Get owner of an ERC-721 token
+   */
+  public async getNftOwner(
+    contractAddress: string,
+    tokenId: string | number | bigint
+  ): Promise<string | null> {
+    const normalizedAddress = this.validateAddress(contractAddress);
+    if (!normalizedAddress) return null;
+    const u256Id = uint256.bnToUint256(BigInt(tokenId));
+    const contract = new Contract(ERC721_ABI, normalizedAddress, this.provider);
+    try {
+      const res = await contract.call("owner_of", [u256Id]);
+      const owner = Array.isArray(res) ? res[0] : res;
+      return num.toHex(owner) ?? null;
+    } catch (error) {
+      console.error(`Error getting owner for token ${tokenId} on contract ${contractAddress}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get token URI
+   */
+  public async getTokenURI(
+    contractAddress: string,
+    tokenId: string | number | bigint
+  ): Promise<string | null> {
+    const normalizedAddress = this.validateAddress(contractAddress);
+    if (!normalizedAddress) return null;
+    const u256Id = uint256.bnToUint256(BigInt(tokenId));
+    const contract = new Contract(ERC721_ABI, normalizedAddress, this.provider);
+    try {
+      const res = await contract.call("token_uri", [u256Id]);
+      const uri = Array.isArray(res)
+        ? res.map((x: any) => String(x)).join("")
+        : res?.toString?.();
+      return uri as string ?? null;
+    } catch (error) {
+      console.error(`Error getting token URI for token ${tokenId} on contract ${contractAddress}:`, error);
+      return null;
+    }
+  }
+
+
+  /**
    * Validate and normalize StarkNet address
    */
   public validateAddress(address: string): string | null {
@@ -37,7 +83,8 @@ export class StarkNetService {
       return null;
     }
   }
-
+  
+  
   /**
    * P-Limit light weight lib
    * Simple lib to bypass RPC rate limit abit and then run retry if we ever hit limit.

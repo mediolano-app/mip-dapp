@@ -89,7 +89,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-background">
+    <footer className="bg-background border-t border-border/20 mt-20">
      
 
       {/* Main Content - Mobile Collapsible, Desktop Grid */}

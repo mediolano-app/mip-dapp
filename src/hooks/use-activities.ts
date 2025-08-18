@@ -261,10 +261,22 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       metadata: { blockNumber: Number(e.block_number ?? 0), contractAddress: CONTRACTS.COLLECTION_FACTORY },
     })
 
-    for (const e of rawFactoryCollectionCreated) items.push({ ...baseFor(e), type: 'collection_create', title: 'Created New Collection', description: 'Successfully created a new IP collection' })
-    for (const e of rawFactoryTokenMinted) items.push({ ...baseFor(e), type: 'mint', title: 'Minted IP Asset', description: 'Successfully minted a new intellectual property asset', assetId: extractTokenId(e.data || []) })
-    for (const e of rawFactoryTokenMintedBatch) items.push({ ...baseFor(e), type: 'mint_batch', title: 'Minted Multiple IP Assets', description: 'Successfully minted multiple intellectual property assets' })
-    for (const e of rawFactoryTokenBurned) items.push({ ...baseFor(e), type: 'burn', title: 'Burned IP Asset', description: 'IP asset has been permanently destroyed', assetId: extractTokenId(e.data || []) })
+    for (const e of rawFactoryCollectionCreated) {
+      const { fromAddress, toAddress } = extractAddrs(e.data || [])
+      items.push({ ...baseFor(e), type: 'collection_create', title: 'Created New Collection', description: 'Successfully created a new IP collection', fromAddress, toAddress })
+    }
+    for (const e of rawFactoryTokenMinted) {
+      const { fromAddress, toAddress } = extractAddrs(e.data || [])
+      items.push({ ...baseFor(e), type: 'mint', title: 'Minted IP Asset', description: 'Successfully minted a new intellectual property asset', assetId: extractTokenId(e.data || []), fromAddress, toAddress })
+    }
+    for (const e of rawFactoryTokenMintedBatch) {
+      const { fromAddress, toAddress } = extractAddrs(e.data || [])
+      items.push({ ...baseFor(e), type: 'mint_batch', title: 'Minted Multiple IP Assets', description: 'Successfully minted multiple intellectual property assets', fromAddress, toAddress })
+    }
+    for (const e of rawFactoryTokenBurned) {
+      const { fromAddress, toAddress } = extractAddrs(e.data || [])
+      items.push({ ...baseFor(e), type: 'burn', title: 'Burned IP Asset', description: 'IP asset has been permanently destroyed', assetId: extractTokenId(e.data || []), fromAddress, toAddress })
+    }
     for (const e of rawFactoryOwnershipTransferred) {
       const { fromAddress, toAddress } = extractAddrs(e.data || [])
       const isOutgoing = userAddress && fromAddress?.toLowerCase() === userAddress.toLowerCase()
@@ -291,15 +303,20 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       })
     }
 
-    // filter by current user address
+    // Filter by current user address transactions
     const normalizedAddress = userAddress?.toLowerCase()
     const filtered = normalizedAddress
       ? items.filter((item) => {
+          const from = item.fromAddress?.toLowerCase()
+          const to = item.toAddress?.toLowerCase()
           const sender = voyagerSenders[String(item.hash)]
-          return sender && sender === normalizedAddress
+          return (
+            (from && from === normalizedAddress) ||
+            (to && to === normalizedAddress) ||
+            (sender && sender === normalizedAddress)
+          )
         })
       : items
-
     return filtered.sort((a, b) => {
       const ta = Date.parse(a.timestamp || '') || 0
       const tb = Date.parse(b.timestamp || '') || 0

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/src/components/ui/card"
 import { TrendingUp, Users, Shield, Zap } from "lucide-react"
 import { FeaturedArticle } from "@/src/components/news/featured-article"
 import { newsArticles, getAllCategories } from "@/src/lib/news-data"
-import { Hero } from "@/src/components/hero"
+import { PrismHero } from "@/src/components/prism-hero"
 
 
 export default function HomePage() {
@@ -28,10 +28,20 @@ export default function HomePage() {
       </div>*/}
 
 
-      {/* New Hero Section */}
+      {/* New Prism Hero Section */}
         <div className="px-4 pt-6">
           <div className="mx-auto max-w-6xl">
-            <Hero />
+            <PrismHero
+              kicker="Gasless mints • Own your IP"
+              title="Tokenize your content"
+              highlight="fast, free, onchain"
+              subtitle="Turn intellectual property into verifiable, programmable assets with one click."
+              primaryCta={{ label: "Start creating", href: "/create" }}
+              secondaryCta={{ label: "Sign up", href: "/create" }}
+              hue={268}
+              size="md"
+              align="left"
+            />
           </div>
         </div>
 
