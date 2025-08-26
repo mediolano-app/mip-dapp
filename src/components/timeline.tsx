@@ -27,7 +27,6 @@ import {
   Network,
   Award,
 } from "lucide-react"
-import { timelineAssets } from "@/src/lib/mock-data"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -37,6 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu"
+import { getPublicTimelineAssets, PublicTimelineAsset } from "@/src/services/public-timeline.service"
 
 const getLicenseColor = (licenseType: string) => {
   switch (licenseType) {
@@ -65,6 +65,7 @@ const defaultFilters: FilterState = {
 }
 
 const ASSETS_PER_PAGE = 10
+const MAX_CONCURRENT = 2
 
 export function Timeline() {
   const [filters, setFilters] = useState<FilterState>(defaultFilters)
@@ -72,63 +73,79 @@ export function Timeline() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [allAssets, setAllAssets] = useState<PublicTimelineAsset[]>([])
 
+  // Fetch assets from backend (like public timeline)
+  useEffect(() => {
+    setIsLoading(true)
+    getPublicTimelineAssets(0, 1000) // Fetch a large batch for client-side filtering
+      .then((assets) => {
+        setAllAssets(assets)
+        setIsLoading(false)
+      })
+      .catch(() => setIsLoading(false))
+  }, [])
+
+  // Filtering logic (same as before, but on allAssets)
   const filteredAssets = useMemo(() => {
-    let filtered = [...timelineAssets]
+    let filtered = allAssets
 
     // Search filter
     if (filters.search) {
       filtered = filtered.filter(
-        (asset) =>
-          asset.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-          asset.description.toLowerCase().includes(filters.search.toLowerCase()) ||
-          asset.creator.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-          asset.tags.toLowerCase().includes(filters.search.toLowerCase()),
+        (item) =>
+          item.metadata?.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
+          item.metadata?.description?.toLowerCase().includes(filters.search.toLowerCase()) ||
+          item.metadata?.author?.toLowerCase().includes(filters.search.toLowerCase()) ||
+          item.metadata?.tags?.toLowerCase().includes(filters.search.toLowerCase()),
       )
     }
 
     // Asset type filter
     if (filters.assetTypes.length > 0) {
-      filtered = filtered.filter((asset) => filters.assetTypes.includes(asset.type.toLowerCase()))
+      filtered = filtered.filter((item) => filters.assetTypes.includes(item.metadata?.type?.toLowerCase()))
     }
 
     // License filter
     if (filters.licenses.length > 0) {
-      filtered = filtered.filter((asset) => {
-        const assetLicense = asset.licenseType.toLowerCase().replace(/\s+/g, "-")
-        return filters.licenses.some((license) => assetLicense.includes(license) || license.includes(assetLicense))
+      filtered = filtered.filter((item) => {
+        const assetLicense = item.metadata?.licenseType?.toLowerCase().replace(/\s+/g, "-")
+        return filters.licenses.some(
+          (license) => assetLicense?.includes(license) || license?.includes(assetLicense),
+        )
       })
-    }
-
-    // Verified creators filter
-    if (filters.verifiedOnly) {
-      filtered = filtered.filter((asset) => asset.creator.verified)
     }
 
     // Tags filter
     if (filters.tags.length > 0) {
-      filtered = filtered.filter((asset) =>
-        filters.tags.some((tag) => asset.tags.toLowerCase().includes(tag.toLowerCase())),
+      filtered = filtered.filter((item) =>
+        filters.tags.some((tag) => item.metadata?.tags?.toLowerCase().includes(tag.toLowerCase())),
       )
     }
 
     // Sort
     switch (filters.sortBy) {
       case "alphabetical":
-        filtered.sort((a, b) => a.title.localeCompare(b.title))
+        filtered.sort((a, b) => (a.metadata?.title || "").localeCompare(b.metadata?.title || ""))
         break
       case "popular":
-        filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        filtered.sort(
+          (a, b) =>
+            new Date(b.metadata?.timestamp || 0).getTime() - new Date(a.metadata?.timestamp || 0).getTime(),
+        )
         break
       case "trending":
-        filtered.sort((a, b) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime())
+        filtered.sort(
+          (a, b) =>
+            new Date(b.metadata?.registrationDate || 0).getTime() - new Date(a.metadata?.registrationDate || 0).getTime(),
+        )
         break
       default:
         break
     }
 
     return filtered
-  }, [filters])
+  }, [filters, allAssets])
 
   const paginatedAssets = useMemo(() => {
     return filteredAssets.slice(0, currentPage * ASSETS_PER_PAGE)
@@ -239,13 +256,16 @@ export function Timeline() {
 
   return (
     <div className="space-y-6">
-     
-     
       {/* Header */}
       <div className="text-center space-y-4">
-        
+        <p className="text-lg text-muted-foreground">
+          Explore a diverse range of IP assets, from creative works to innovative ideas. Join the community in sharing and
+          protecting intellectual property.
+        </p>
       </div>
-     
+
+      {/* Asset Filter Drawer - Always Rendered */}
+      <AssetFilterDrawer filters={filters} setFilters={setFilters} />
 
       {/* Timeline Feed */}
       {filteredAssets.length === 0 ? (
@@ -262,25 +282,25 @@ export function Timeline() {
         </div>
       ) : (
         <div className="max-w-2xl mx-auto space-y-6">
-          {paginatedAssets.map((asset, index) => (
+          {paginatedAssets.map((item, index) => (
             <Card
-              key={asset.id}
+              key={item.asset.tokenId}
               className="overflow-hidden border-border/50 bg-card hover:shadow-lg transition-all duration-300 group"
             >
-              <Collapsible open={expandedAssets.has(asset.id)} onOpenChange={() => toggleExpanded(asset.id)}>
+              <Collapsible open={expandedAssets.has(item.asset.tokenId)} onOpenChange={() => toggleExpanded(item.asset.tokenId)}>
                 {/* Asset Media - Top */}
-                <Link href={`/asset/${asset.slug}`}>
+                <Link href={`/asset/${item.asset.tokenId}`}>
                   <div className="relative">
                     <Image
-                      src={asset.mediaUrl || "/placeholder.svg"}
-                      alt={asset.title}
+                      src={item.metadata?.mediaUrl || "/placeholder.svg"}
+                      alt={item.metadata?.title || "Untitled"}
                       width={600}
                       height={400}
                       className="w-full h-64 object-cover cursor-pointer"
                     />
                     <div className="absolute top-3 right-3">
-                      <Badge className={`${getLicenseColor(asset.licenseType)} text-xs`}>
-                        {asset.licenseType.replace("-", " ").toUpperCase()}
+                      <Badge className={`${getLicenseColor(item.metadata?.licenseType)} text-xs`}>
+                        {(item.metadata?.licenseType ? item.metadata.licenseType.replace("-", " ") : "UNKNOWN").toUpperCase()}
                       </Badge>
                     </div>
                   </div>
@@ -290,43 +310,27 @@ export function Timeline() {
                 <CardContent className="p-4">
                   {/* Title & Description */}
                   <div className="space-y-3 mb-4">
-                    <Link href={`/asset/${asset.slug}`}>
+                    <Link href={`/asset/${item.asset.tokenId}`}>
                       <h2 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors cursor-pointer">
-                        {asset.title}
+                        {item.metadata?.title || "Untitled"}
                       </h2>
                     </Link>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{asset.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{item.metadata?.description}</p>
                   </div>
 
                   {/* Type & Author */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <Link href={`/creator/${asset.creator.username}`}>
-                        <Image
-                          src={asset.creator.avatar || "/placeholder.svg"}
-                          alt={asset.creator.name}
-                          width={32}
-                          height={32}
-                          className="w-8 h-8 rounded-full object-cover ring-2 ring-border/50"
-                        />
-                      </Link>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <Link
-                            href={`/creator/${asset.creator.username}`}
-                            className="font-medium text-sm text-foreground hover:text-primary transition-colors"
-                          >
-                            {asset.creator.name}
-                          </Link>
-                          {asset.creator.verified && <Shield className="w-3 h-3 text-blue-500" />}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-muted-foreground">{asset.timestamp}</span>
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {asset.type}
-                          </Badge>
-                          
-                        </div>
+                      <Image
+                        src={item.metadata?.avatar || "/placeholder.svg"}
+                        alt={item.metadata?.author || "Unknown"}
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{item.metadata?.author || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground truncate">@{item.metadata?.author?.toLowerCase().replace(/\s/g, "") || "unknown"}</p>
                       </div>
                     </div>
 
@@ -341,7 +345,7 @@ export function Timeline() {
                           <Eye className="w-4 h-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleShare(asset)}>
+                        <DropdownMenuItem onClick={() => handleShare(item)}>
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
                         </DropdownMenuItem>
@@ -361,28 +365,24 @@ export function Timeline() {
                   {/* Actions */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleShare(asset)}
+                        onClick={() => handleShare(item)}
                         className="text-muted-foreground hover:text-foreground"
                       >
                         <Share className="w-4 h-4 mr-1" />
                         Share
                       </Button>
 
-
-                  
-
-                      {asset.externalUrl && (
+                      {item.metadata?.externalUrl && (
                         <Button
                           variant="ghost"
                           size="sm"
                           asChild
                           className="text-muted-foreground hover:text-foreground"
                         >
-                          <a href={asset.externalUrl} target="_blank" rel="noopener noreferrer">
+                          <a href={item.metadata.externalUrl} target="_blank" rel="noopener noreferrer">
                             <Globe className="w-4 h-4 mr-1" />
                             External
                           </a>
@@ -391,8 +391,7 @@ export function Timeline() {
                     </div>
 
                     <div className="flex items-center space-x-2">
-
-                      <Link href={`/asset/${asset.slug}`}>
+                      <Link href={`/asset/${item.asset.tokenId}`}>
                         <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                           <Eye className="w-4 h-4 mr-1" />
                           View
@@ -402,7 +401,7 @@ export function Timeline() {
                       <CollapsibleTrigger asChild>
                         <Button variant="outline" size="sm">
                           <ChevronDown
-                            className={`w-4 h-4 transition-transform ${expandedAssets.has(asset.id) ? "rotate-180" : ""}`}
+                            className={`w-4 h-4 transition-transform ${expandedAssets.has(item.asset.tokenId) ? "rotate-180" : ""}`}
                           />
                         </Button>
                       </CollapsibleTrigger>
@@ -424,15 +423,15 @@ export function Timeline() {
                           </div>
                           <div className="flex items-center space-x-2">
                             <Image
-                              src={asset.creator.avatar || "/placeholder.svg"}
-                              alt={asset.creator.name}
+                              src={item.metadata?.avatar || "/placeholder.svg"}
+                              alt={item.metadata?.author || "Unknown"}
                               width={24}
                               height={24}
                               className="w-6 h-6 rounded-full object-cover"
                             />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{asset.creator.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">@{asset.creator.username}</p>
+                              <p className="text-sm font-medium text-foreground truncate">{item.metadata?.author || "Unknown"}</p>
+                              <p className="text-xs text-muted-foreground truncate">@{item.metadata?.author?.toLowerCase().replace(/\s/g, "") || "unknown"}</p>
                             </div>
                           </div>
                         </div>
@@ -446,8 +445,8 @@ export function Timeline() {
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-foreground">{asset.protectionStatus}</p>
-                            <p className="text-xs text-muted-foreground">v{asset.ipVersion}</p>
+                            <p className="text-sm font-medium text-foreground">{item.metadata?.protectionStatus || "N/A"}</p>
+                            <p className="text-xs text-muted-foreground">v{item.metadata?.ipVersion || "1"}</p>
                           </div>
                         </div>
 
@@ -460,8 +459,8 @@ export function Timeline() {
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-foreground">{asset.blockchain}</p>
-                            <p className="text-xs text-muted-foreground font-mono">#{asset.tokenId || asset.id}</p>
+                            <p className="text-sm font-medium text-foreground">Starknet</p>
+                            <p className="text-xs text-muted-foreground font-mono">#{item.asset.tokenId}</p>
                           </div>
                         </div>
 
@@ -474,8 +473,8 @@ export function Timeline() {
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-foreground">{asset.registrationDate}</p>
-                            <p className="text-xs text-muted-foreground">{asset.protectionDuration}</p>
+                            <p className="text-sm font-medium text-foreground">{item.metadata?.registrationDate || "N/A"}</p>
+                            <p className="text-xs text-muted-foreground">{item.metadata?.protectionDuration || ""}</p>
                           </div>
                         </div>
                       </div>
@@ -485,13 +484,13 @@ export function Timeline() {
                         <div className="flex items-center space-x-2 mb-3">
                           <Award className="w-4 h-4 text-orange-500" />
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Licensing {asset.licenseType}
+                            Licensing {item.metadata?.licenseType || "Unknown"}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           <div className="text-center">
                             <div className="flex justify-center mb-1">
-                              {asset.commercialUse ? (
+                              {item.metadata?.commercialUse ? (
                                 <CheckCircle className="w-4 h-4 text-green-500" />
                               ) : (
                                 <XCircle className="w-4 h-4 text-red-500" />
@@ -501,7 +500,7 @@ export function Timeline() {
                           </div>
                           <div className="text-center">
                             <div className="flex justify-center mb-1">
-                              {asset.modifications ? (
+                              {item.metadata?.modifications ? (
                                 <CheckCircle className="w-4 h-4 text-green-500" />
                               ) : (
                                 <XCircle className="w-4 h-4 text-red-500" />
@@ -511,7 +510,7 @@ export function Timeline() {
                           </div>
                           <div className="text-center">
                             <div className="flex justify-center mb-1">
-                              {asset.attribution ? (
+                              {item.metadata?.attribution ? (
                                 <CheckCircle className="w-4 h-4 text-green-500" />
                               ) : (
                                 <XCircle className="w-4 h-4 text-red-500" />
@@ -531,11 +530,14 @@ export function Timeline() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {asset.tags.split(", ").map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs px-2 py-0.5">
-                              {tag}
-                            </Badge>
-                          ))}
+                          {(item.metadata?.tags || "")
+                            .split(",")
+                            .filter(Boolean)
+                            .map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs px-2 py-0.5">
+                                {tag}
+                              </Badge>
+                            ))}
                         </div>
                       </div>
                     </div>

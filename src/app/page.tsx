@@ -8,7 +8,7 @@ import { FeaturedArticle } from "@/src/components/news/featured-article"
 import { newsArticles, getAllCategories } from "@/src/lib/news-data"
 
 import { Hero } from "@/src/components/hero"
-import PublicTimeline from "@/src/components/public-timeline"
+
 
 
 export default function HomePage() {
@@ -39,7 +39,7 @@ export default function HomePage() {
 
         {/* Public Timeline Section for testing */}
         <div className="px-4 pt-6 pb-8">
-          <PublicTimeline />
+          <Timeline />
         </div>
 
 
