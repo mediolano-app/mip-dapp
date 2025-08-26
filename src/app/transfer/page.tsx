@@ -45,7 +45,7 @@ export default function TransferPage() {
   const { getToken } = useAuth()
 
   // Chipi SDK hooks
-  const { transferAsync, transferData, isLoading: isTransferLoading, error: transferError } = useTransfer()
+  const { transferAsync, transferData, isLoading: isTransferLoading,  } = useTransfer()
 
   // Form state
   const [selectedAsset, setSelectedAsset] = useState(preselectedAsset || "")
