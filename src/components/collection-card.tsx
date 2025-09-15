@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/src/components/ui/card"
 import { Badge } from "@/src/components/ui/badge"
 import { Button } from "@/src/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar"
-import { Eye, Heart, Star, TrendingUp, CheckCircle, Calendar, FolderOpen, MoreVertical, Share2, ExternalLink, Copy } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu"
+import { Eye, Heart, Star, TrendingUp, CheckCircle, Calendar, FolderOpen, MoreVertical, Share2, ExternalLink, Copy, Flag } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu"
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
 import { useToast } from "@/src/components/ui/use-toast"
 import type { Collection } from "@/src/types/asset"
 import { formatDate } from "@/src/lib/utils"
@@ -93,6 +94,21 @@ export function CollectionCard({ collection, variant = "default" }: CollectionCa
           <ExternalLink className="mr-2 h-4 w-4" />
           Open in New Tab
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <ReportContentDialog
+          contentType="collection"
+          contentId={collection.id}
+          contentTitle={collection.name}
+          contentOwner={collection.creator?.username || 'Unknown'}
+        >
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={(e) => e.preventDefault()}
+          >
+            <Flag className="mr-2 h-4 w-4" />
+            Report Collection
+          </DropdownMenuItem>
+        </ReportContentDialog>
       </DropdownMenuContent>
     </DropdownMenu>
   )

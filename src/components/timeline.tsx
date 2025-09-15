@@ -33,9 +33,11 @@ import {
   Hash,
   Network,
   Award,
+  Flag,
 } from "lucide-react";
 import { useTimeline } from "@/src/hooks/use-timeline";
 import { toast } from "@/src/hooks/use-toast";
+import { shortenAddress } from "@/src/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -45,6 +47,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { ReportContentDialog } from "@/src/components/report-content-dialog";
 
 const getLicenseColor = (licenseType: string) => {
   switch (licenseType) {
@@ -430,12 +433,16 @@ export function Timeline() {
                           alt={asset.creator.name}
                           width={32}
                           height={32}
-                          className="w-8 h-8 rounded-full object-cover ring-2 ring-border/50"
+                          className="min-w-8 min-h-8 w-8 h-8 rounded-full object-cover ring-2 ring-border/50"
                         />
                       </Link>
                       <div>
                         <div className="flex items-center space-x-2">
-                          {asset.creator.name}
+                          {
+                            typeof asset.creator.name === "string" && asset.creator.name.startsWith("0x") && asset.creator.name.length > 16
+                              ? shortenAddress(asset.creator.name, 6)
+                              : asset.creator.name
+                          }
                           {/* <Link
                             href={`/creator/${asset.creator.username}`}
                             className="font-medium text-sm text-foreground hover:text-primary transition-colors"
@@ -443,7 +450,7 @@ export function Timeline() {
                             {asset.creator.name}
                           </Link> */}
                           {asset.creator.verified && (
-                            <Shield className="w-3 h-3 text-blue-500" />
+                            <Shield className="ml-1 w-3 h-3 text-blue-500" />
                           )}
                         </div>
                         <div className="flex items-center space-x-2">
@@ -488,6 +495,22 @@ export function Timeline() {
                           <ExternalLink className="w-4 h-4 mr-2" />
                           View on Explorer
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <ReportContentDialog
+                          contentType="asset"
+                          contentId={asset.id}
+                          contentTitle={asset.title}
+                          contentOwner={asset.author}
+                          contentImage={asset.mediaUrl}
+                        >
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Flag className="w-4 h-4 mr-2" />
+                            Report Content
+                          </DropdownMenuItem>
+                        </ReportContentDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

@@ -6,6 +6,7 @@ import { assetsRoutes } from "./routes/assets";
 import { collectionsRoutes } from "./routes/collection";
 import { transfersRoutes } from "./routes/transfers";
 import { statsRoutes } from "./routes/stats";
+import { reportsRoutes } from "./routes/reports";
 import { openapiSpec } from "lib/util";
 
 
@@ -86,6 +87,7 @@ fastify.register(assetsRoutes, { prefix: "/api" });
 fastify.register(collectionsRoutes, { prefix: "/api" });
 fastify.register(transfersRoutes, { prefix: "/api" });
 fastify.register(statsRoutes, { prefix: "/api" });
+fastify.register(reportsRoutes, { prefix: "/api" });
 
 // Root endpoint
 fastify.get("/", async (request, reply) => {
@@ -98,6 +100,7 @@ fastify.get("/", async (request, reply) => {
       collections: "/api/collections",
       transfers: "/api/transfers",
       stats: "/api/stats",
+      reports: "/api/reports",
     },
     documentation: process.env.NODE_ENV === "production"? "https://github.com/your-repo/nft-indexer-api" : `http://localhost:${port}/docs`,
   });

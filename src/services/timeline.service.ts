@@ -1,5 +1,6 @@
 import type { AssetIP } from "@/src/types/asset";
 import { IPFSService } from "./ipfs.service";
+import { getApiBaseUrl } from "@/src/lib/config";
 
 export interface BackendAsset {
   id: string;
@@ -83,7 +84,7 @@ class TimelineService {
   private readonly CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mediolano-api-service.onrender.com";
+    this.baseUrl = getApiBaseUrl();
     this.ipfsService = new IPFSService();
   }
 
@@ -111,7 +112,7 @@ class TimelineService {
         params.append("collectionId", filters.collectionId);
       }
       
-      const response = await fetch(`${this.baseUrl}/api/assets?${params}`, {
+      const response = await fetch(`${this.baseUrl}/assets?${params}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -569,7 +570,7 @@ class TimelineService {
     return blockTime;
   }
 
-  private truncateAddress(address: string): string {
+  public truncateAddress(address: string): string {
     if (!address || address.length < 10) return address;
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }
@@ -596,7 +597,7 @@ class TimelineService {
   async getRecentActivity(limit = 10): Promise<any[]> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/transfers?limit=${limit}&sortBy=block&sortOrder=desc`
+        `${this.baseUrl}/transfers?limit=${limit}&sortBy=block&sortOrder=desc`
       );
       
       if (!response.ok) {
