@@ -1,4 +1,4 @@
-import { pgTable, varchar, bigint, text } from "drizzle-orm/pg-core";
+import { pgTable, varchar, bigint, text, timestamp } from "drizzle-orm/pg-core";
 
 export const cursorTable = pgTable("cursor_table", {
   id: text("id").primaryKey(), // "nft_sepolia", "mip_sepolia", etc.
@@ -36,6 +36,24 @@ export const transfers = pgTable("transfers", {
   block: bigint("block", { mode: "number" }).notNull(),
   // Add indexer source
   indexerSource: varchar("indexer_source", { length: 50 }).notNull(), // "medialano-dapp", "medialano-mip"
+});
+
+export const reports = pgTable("reports", {
+  id: varchar("id", { length: 255 }).primaryKey(), // reportId
+  reportType: varchar("report_type", { length: 100 }).notNull(),
+  contentType: varchar("content_type", { length: 50 }).notNull(), // "asset", "collection", "profile"
+  contentId: varchar("content_id", { length: 255 }).notNull(),
+  contentTitle: text("content_title").notNull(),
+  contentOwner: varchar("content_owner", { length: 255 }),
+  reporterWallet: varchar("reporter_wallet", { length: 255 }).notNull(),
+  reporterUserId: varchar("reporter_user_id", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // "pending", "under_review", "resolved", "dismissed"
+  blockchainTxHash: varchar("blockchain_tx_hash", { length: 255 }),
+  source: varchar("source", { length: 50 }).notNull().default("mip-dapp"),
+  version: varchar("version", { length: 10 }).notNull().default("1.0"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Optional: Define indexer sources as constants

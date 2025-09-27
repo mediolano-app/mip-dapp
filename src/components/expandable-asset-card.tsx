@@ -20,6 +20,7 @@ import {
   MoreHorizontal,
   Share,
   UserPlus,
+  Flag,
 } from "lucide-react"
 import type { AssetIP } from "@/src/types/asset"
 import Image from "next/image"
@@ -31,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu"
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
 
 interface ExpandableAssetCardProps {
   asset: AssetIP
@@ -178,6 +180,25 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                           <ExternalLink className="w-4 h-4 mr-2" />
                           View on Explorer
                         </DropdownMenuItem>
+                        {!isOwner && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <ReportContentDialog
+                              contentType="asset"
+                              contentId={asset.id}
+                              contentTitle={asset.title}
+                              contentOwner={asset.author}
+                            >
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Flag className="w-4 h-4 mr-2" />
+                                Report Content
+                              </DropdownMenuItem>
+                            </ReportContentDialog>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -361,6 +382,25 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                   <ExternalLink className="w-4 h-4 mr-2" />
                   View on Explorer
                 </DropdownMenuItem>
+                {!isOwner && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <ReportContentDialog
+                      contentType="asset"
+                      contentId={asset.id}
+                      contentTitle={asset.title}
+                      contentOwner={asset.author}
+                    >
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <Flag className="w-4 h-4 mr-2" />
+                        Report Content
+                      </DropdownMenuItem>
+                    </ReportContentDialog>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

@@ -33,9 +33,11 @@ import {
   Hash,
   Network,
   Award,
+  Flag,
 } from "lucide-react";
 import { useTimeline } from "@/src/hooks/use-timeline";
 import { toast } from "@/src/hooks/use-toast";
+import { shortenAddress } from "@/src/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -45,8 +47,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-
-import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
 
 const getLicenseColor = (licenseType: string) => {
   switch (licenseType) {
@@ -80,8 +81,6 @@ export function Timeline() {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
 
-  // Add state to track which asset is being reported
-  const [reportAsset, setReportAsset] = useState<any | null>(null);
 
   const {
     assets,
@@ -435,12 +434,16 @@ export function Timeline() {
                           alt={asset.creator.name}
                           width={32}
                           height={32}
-                          className="w-8 h-8 rounded-full object-cover ring-2 ring-border/50"
+                          className="min-w-8 min-h-8 w-8 h-8 rounded-full object-cover ring-2 ring-border/50"
                         />
                       </Link>
                       <div>
                         <div className="flex items-center space-x-2">
-                          {asset.creator.name}
+                          {
+                            typeof asset.creator.name === "string" && asset.creator.name.startsWith("0x") && asset.creator.name.length > 16
+                              ? shortenAddress(asset.creator.name, 6)
+                              : asset.creator.name
+                          }
                           {/* <Link
                             href={`/creator/${asset.creator.username}`}
                             className="font-medium text-sm text-foreground hover:text-primary transition-colors"
@@ -448,7 +451,7 @@ export function Timeline() {
                             {asset.creator.name}
                           </Link> */}
                           {asset.creator.verified && (
-                            <Shield className="w-3 h-3 text-blue-500" />
+                            <Shield className="ml-1 w-3 h-3 text-blue-500" />
                           )}
                         </div>
                         <div className="flex items-center space-x-2">
@@ -477,19 +480,28 @@ export function Timeline() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
 
-                        <DropdownMenuItem onClick={() => handleShare(asset)}>
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => handleShare(asset)}>
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
                         </DropdownMenuItem>
                        
                         <DropdownMenuSeparator />
 
-                        <DropdownMenuItem
-                          onClick={() => setReportAsset(asset)}
-                          className="text-red-600 focus:text-red-600"
+                        <ReportContentDialog
+                          contentType="asset"
+                          contentId={asset.id}
+                          contentTitle={asset.title}
+                          contentOwner={asset.author}
+                          contentImage={asset.mediaUrl}
                         >
-                          Report Asset
-                        </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive cursor-pointer"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Flag className="w-4 h-4 mr-2" />
+                            Report Asset
+                          </DropdownMenuItem>
+                        </ReportContentDialog>
 
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -765,18 +777,6 @@ export function Timeline() {
         </div>
       )}
 
-      {/* Report Asset Dialog */}
-      {reportAsset && (
-        <ReportAssetDialog
-          open={!!reportAsset}
-          assetId={reportAsset.id}
-          contentId={reportAsset.id}
-          contentName={reportAsset.title}
-          onOpenChange={(open: boolean) => {
-            if (!open) setReportAsset(null);
-          }}
-        />
-      )}
 
     </div>
   );

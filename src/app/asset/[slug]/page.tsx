@@ -17,7 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { getLicenseColor, getProtectionIcon } from "@/src/lib/asset-display-utils"
 import { getExplorerUrlForToken } from "@/src/lib/explorer"
 
-import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
 
 
 export default function AssetPage() {
@@ -27,7 +27,6 @@ export default function AssetPage() {
   const { asset, isLoading } = useAssetBySlug(slug)
   const [isOwner] = useState(false)
 
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
 
   const handleShare = () => {
     const url = window.location.href
@@ -223,12 +222,20 @@ export default function AssetPage() {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                        onClick={() => setIsReportDialogOpen(true)}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        Report Asset
-                      </DropdownMenuItem>
+                        <ReportContentDialog
+                          contentType="asset"
+                          contentId={asset.slug}
+                          contentTitle={asset.title}
+                          contentOwner={asset.creator?.id}
+                        >
+                          <DropdownMenuItem 
+                            className="text-red-600 focus:text-red-600"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Flag className="w-4 h-4 mr-2" />
+                            Report Asset
+                          </DropdownMenuItem>
+                        </ReportContentDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -520,14 +527,6 @@ export default function AssetPage() {
           </div>
         </div>
       </main>
-      {/* Report Dialog */}
-      <ReportAssetDialog
-        assetId={asset.slug}
-        assetName={asset.title}
-        assetCreator={asset.creator.name}
-        open={isReportDialogOpen}
-        onOpenChange={setIsReportDialogOpen}
-      />
     </div>
   )
 }

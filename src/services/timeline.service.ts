@@ -1,5 +1,6 @@
 import type { AssetIP } from "@/src/types/asset";
 import { IPFSService } from "./ipfs.service";
+import { getApiBaseUrl } from "@/src/lib/config";
 
 export interface BackendAsset {
   id: string;
@@ -83,7 +84,7 @@ class TimelineService {
   private readonly CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://mediolano-api-service.onrender.com";
+    this.baseUrl = getApiBaseUrl();
     this.ipfsService = new IPFSService();
   }
 
@@ -569,7 +570,7 @@ class TimelineService {
     return blockTime;
   }
 
-  private truncateAddress(address: string): string {
+  public truncateAddress(address: string): string {
     if (!address || address.length < 10) return address;
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }
