@@ -324,3 +324,123 @@ components:
             limit: { type: integer }
             offset: { type: integer }
             hasMore: { type: boolean }
+              /reports/submit:
+    post:
+      summary: Submit a report
+      description: Submit a report about an asset, collection, or profile for moderation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportSubmissionRequest"
+      responses:
+        "201":
+          description: Report submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSubmissionResponse"
+        "400":
+          description: Invalid report type
+        "409":
+          description: Duplicate report
+        "500":
+          description: Internal server error
+
+  /reports:
+    get:
+      summary: Get all reports
+      description: Fetch paginated reports for moderation dashboard.
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, under_review, resolved, dismissed] }
+        - in: query
+          name: contentType
+          schema: { type: string, enum: [asset, collection, profile] }
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportListResponse"
+        "500":
+          description: Internal server error
+
+  /reports/{id}:
+    get:
+      summary: Get specific report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Single report details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDetailResponse"
+        "404":
+          description: Report not found
+        "500":
+          description: Internal server error
+
+  /reports/{id}/status:
+    patch:
+      summary: Update report status
+      description: Update the moderation status of a report.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, under_review, resolved, dismissed]
+              required: [status]
+      responses:
+        "200":
+          description: Report status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportStatusResponse"
+        "404":
+          description: Report not found
+        "500":
+          description: Internal server error
+
+  /reports/health:
+    get:
+      summary: Reports service health check
+      responses:
+        "200":
+          description: Reports service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  timestamp: { type: string, format: date-time }
+        "503":
+          description: Reports service is unhealthy
+
