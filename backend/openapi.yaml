@@ -15,7 +15,9 @@ paths:
       parameters:
         - in: query
           name: indexerSource
-          schema: { type: string, enum: [MEDIALANO-DAPP, MEDIALANO-MIPP] }
+          schema:
+            type: string
+            enum: [MEDIALANO-DAPP, MEDIALANO-MIPP]
         - in: query
           name: collectionId
           schema: { type: string }
@@ -24,17 +26,28 @@ paths:
           schema: { type: string }
         - in: query
           name: limit
-          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
         - in: query
           name: offset
-          schema: { type: integer, default: 0 }
+          schema:
+            type: integer
+            default: 0
         - in: query
           name: sortBy
           schema:
-            { type: string, enum: [mintedAtBlock, id], default: mintedAtBlock }
+            type: string
+            enum: [mintedAtBlock, id]
+            default: mintedAtBlock
         - in: query
           name: sortOrder
-          schema: { type: string, enum: [asc, desc], default: desc }
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
       responses:
         "200":
           description: List of assets
@@ -69,7 +82,9 @@ paths:
           schema: { type: string }
         - in: query
           name: indexerSource
-          schema: { type: string, enum: [MEDIALANO-DAPP, MEDIALANO-MIPP] }
+          schema:
+            type: string
+            enum: [MEDIALANO-DAPP, MEDIALANO-MIPP]
         - in: query
           name: collectionId
           schema: { type: string }
@@ -179,7 +194,10 @@ paths:
           schema: { type: integer, default: 0 }
         - in: query
           name: sortOrder
-          schema: { type: string, enum: [asc, desc], default: desc }
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
       responses:
         "200":
           description: Transfer list
@@ -250,81 +268,7 @@ paths:
                   status:
                     type: string
 
-components:
-  schemas:
-    Asset:
-      type: object
-      properties:
-        id: { type: string }
-        collectionId: { type: string }
-        owner: { type: string }
-        tokenUri: { type: string }
-        mintedAtBlock: { type: integer }
-        indexerSource: { type: string }
-    Collection:
-      type: object
-      properties:
-        id: { type: string }
-        creator: { type: string }
-        metadataUri: { type: string }
-        createdAtBlock: { type: integer }
-        indexerSource: { type: string }
-        assetCount: { type: integer }
-    Transfer:
-      type: object
-      properties:
-        id: { type: string }
-        tokenId: { type: string }
-        from: { type: string }
-        to: { type: string }
-        block: { type: integer }
-        indexerSource: { type: string }
-    Stats:
-      type: object
-      properties:
-        totalAssets: { type: integer }
-        totalCollections: { type: integer }
-        totalTransfers: { type: integer }
-    PaginatedAssets:
-      type: object
-      properties:
-        data:
-          type: array
-          items: { $ref: "#/components/schemas/Asset" }
-        pagination:
-          type: object
-          properties:
-            total: { type: integer }
-            limit: { type: integer }
-            offset: { type: integer }
-            hasMore: { type: boolean }
-    PaginatedCollections:
-      type: object
-      properties:
-        data:
-          type: array
-          items: { $ref: "#/components/schemas/Collection" }
-        pagination:
-          type: object
-          properties:
-            total: { type: integer }
-            limit: { type: integer }
-            offset: { type: integer }
-            hasMore: { type: boolean }
-    PaginatedTransfers:
-      type: object
-      properties:
-        data:
-          type: array
-          items: { $ref: "#/components/schemas/Transfer" }
-        pagination:
-          type: object
-          properties:
-            total: { type: integer }
-            limit: { type: integer }
-            offset: { type: integer }
-            hasMore: { type: boolean }
-              /reports/submit:
+  /reports/submit:
     post:
       summary: Submit a report
       description: Submit a report about an asset, collection, or profile for moderation.
@@ -361,10 +305,14 @@ components:
           schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
         - in: query
           name: status
-          schema: { type: string, enum: [pending, under_review, resolved, dismissed] }
+          schema:
+            type: string
+            enum: [pending, under_review, resolved, dismissed]
         - in: query
           name: contentType
-          schema: { type: string, enum: [asset, collection, profile] }
+          schema:
+            type: string
+            enum: [asset, collection, profile]
       responses:
         "200":
           description: List of reports
@@ -444,3 +392,83 @@ components:
         "503":
           description: Reports service is unhealthy
 
+components:
+  schemas:
+    Asset:
+      type: object
+      properties:
+        id: { type: string }
+        collectionId: { type: string }
+        owner: { type: string }
+        tokenUri: { type: string }
+        mintedAtBlock: { type: integer }
+        indexerSource: { type: string }
+
+    Collection:
+      type: object
+      properties:
+        id: { type: string }
+        creator: { type: string }
+        metadataUri: { type: string }
+        createdAtBlock: { type: integer }
+        indexerSource: { type: string }
+        assetCount: { type: integer }
+
+    Transfer:
+      type: object
+      properties:
+        id: { type: string }
+        tokenId: { type: string }
+        from: { type: string }
+        to: { type: string }
+        block: { type: integer }
+        indexerSource: { type: string }
+
+    Stats:
+      type: object
+      properties:
+        totalAssets: { type: integer }
+        totalCollections: { type: integer }
+        totalTransfers: { type: integer }
+
+    PaginatedAssets:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Asset" }
+        pagination:
+          type: object
+          properties:
+            total: { type: integer }
+            limit: { type: integer }
+            offset: { type: integer }
+            hasMore: { type: boolean }
+
+    PaginatedCollections:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Collection" }
+        pagination:
+          type: object
+          properties:
+            total: { type: integer }
+            limit: { type: integer }
+            offset: { type: integer }
+            hasMore: { type: boolean }
+
+    PaginatedTransfers:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Transfer" }
+        pagination:
+          type: object
+          properties:
+            total: { type: integer }
+            limit: { type: integer }
+            offset: { type: integer }
+            hasMore: { type: boolean }
