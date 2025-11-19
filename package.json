@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@chipi-pay/chipi-sdk": "^3.2.2",
+    "@chipi-stack/nextjs": "^11.13.0",
     "@clerk/nextjs": "^6.22.0",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
@@ -48,6 +49,7 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "formik": "^2.4.6",
+    "framer-motion": "^12.23.24",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "motion": "^12.18.1",

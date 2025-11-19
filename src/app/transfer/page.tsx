@@ -27,7 +27,7 @@ import {
 import { toast } from "@/src/hooks/use-toast"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useTransfer } from "@chipi-pay/chipi-sdk"
+import { useTransfer } from "@chipi-stack/nextjs"
 import { getWalletData } from "@/src/app/onboarding/_actions"
 import { useAuth } from "@clerk/nextjs"
 import { useWalletAssets, useTransactionFeeEstimate } from "@/src/hooks/use-wallet-assets"
@@ -37,15 +37,15 @@ import { starknetService } from "@/src/services/starknet.service"
 const MEDIOLANO_CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_MIP || "0x04b67deb64d285d3de684246084e74ad25d459989b7336786886ec63a28e0cd4"
 
 export default function TransferPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const preselectedAsset = searchParams.get("asset")
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedAsset = searchParams.get("asset");
 
   // Clerk auth for token generation
   const { getToken } = useAuth()
 
   // Chipi SDK hooks
-  const { transferAsync, transferData, isLoading: isTransferLoading, error: transferError } = useTransfer()
+  const { transferAsync, isLoading: isTransferLoading, error: transferError } = useTransfer()
 
   // Form state
   const [selectedAsset, setSelectedAsset] = useState(preselectedAsset || "")
@@ -179,16 +179,26 @@ export default function TransferPage() {
 
       // For NFT transfers, amount is typically "1" and decimals is 0
       const transferResult = await transferAsync({
-        encryptKey: pin,
-        bearerToken: token,
-        wallet: {
-          publicKey: walletData.publicKey,
-          encryptedPrivateKey: walletData.encryptedPrivateKey
+        params:{
+          encryptKey: pin,
+          amount:1,
+          recipient:recipientAddress,
+          token:"ETH",
+          wallet:{
+            publicKey: walletData.publicKey,
+            encryptedPrivateKey: walletData.encryptedPrivateKey
+          }
+          // wallet: {
+          //   publicKey: walletData.publicKey,
+          //   encryptedPrivateKey: walletData.encryptedPrivateKey
+          // },
+          // contractAddress: MEDIOLANO_CONTRACT,
+          // recipient: recipientAddress,   
+          // amount: 1     
+          // // amount: "1", // NFT transfer
+          // decimals: 0 // NFTs typically have 0 decimals
         },
-        contractAddress: MEDIOLANO_CONTRACT,
-        recipient: recipientAddress,
-        amount: "1", // NFT transfer
-        decimals: 0 // NFTs typically have 0 decimals
+        bearerToken: token,
       })
 
       console.log('Transfer result:', transferResult)
