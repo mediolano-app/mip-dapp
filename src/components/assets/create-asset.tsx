@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/src/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useCallAnyContract } from "@chipi-pay/chipi-sdk";
+import { useCallAnyContract } from "@chipi-stack/nextjs";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { FormWrapper } from "../ui/forms/wrapper";
 import { TextAreaInput, TextInput } from "../ui/forms/input";
@@ -198,25 +198,47 @@ export default function CreateAssetView() {
       //console.log("Uploaded:", result);
 
       // Mint NFT using Chipi SDK's callAnyContract
-      const mintResult = await callAnyContractAsync({
-        encryptKey: pin,
-        bearerToken: token,
-        wallet: {
-          publicKey: publicKey,
-          encryptedPrivateKey: encryptedPrivateKey,
-        },
-        contractAddress: MEDIOLANO_CONTRACT,
-        calls: [
-          {
-            contractAddress: MEDIOLANO_CONTRACT,
-            entrypoint: "mint_item",
-            calldata: [
-              publicKey, //
-              result.cid, // tokenURI (metadata)
-            ],
+        const mintResult = await callAnyContractAsync({
+        params:{
+          encryptKey: pin,
+          wallet: {
+            publicKey: publicKey,
+            encryptedPrivateKey: encryptedPrivateKey,
           },
-        ],
+          contractAddress: MEDIOLANO_CONTRACT,
+          calls: [
+            {
+              contractAddress: MEDIOLANO_CONTRACT,
+              entrypoint: "mint_item",
+              calldata: [
+                publicKey, //
+                result.cid, // tokenURI (metadata)
+              ],
+            },
+          ],
+          },
+          bearerToken: token,
       });
+
+      // const mintResult = await callAnyContractAsync({
+      //   encryptKey: pin,
+      //   bearerToken: token,
+      //   wallet: {
+      //     publicKey: publicKey,
+      //     encryptedPrivateKey: encryptedPrivateKey,
+      //   },
+      //   contractAddress: MEDIOLANO_CONTRACT,
+      //   calls: [
+      //     {
+      //       contractAddress: MEDIOLANO_CONTRACT,
+      //       entrypoint: "mint_item",
+      //       calldata: [
+      //         publicKey, //
+      //         result.cid, // tokenURI (metadata)
+      //       ],
+      //     },
+      //   ],
+      // });
 
       console.log("Mint result:", mintResult);
 
