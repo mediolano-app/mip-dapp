@@ -1,16 +1,34 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
-import { Label } from "@/src/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
-import { Badge } from "@/src/components/ui/badge"
-import { Textarea } from "@/src/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/components/ui/dialog"
-import { PinInput } from "@/src/components/pin-input"
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { cairo } from "starknet";
+import {
+  Card, 
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { Badge } from "@/src/components/ui/badge";
+import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/src/components/ui/dialog";
+import { PinInput } from "@/src/components/pin-input";
 import {
   ArrowLeft,
   Scan,
@@ -23,47 +41,64 @@ import {
   CheckCircle,
   AlertTriangle,
   ExternalLink,
-} from "lucide-react"
-import { toast } from "@/src/hooks/use-toast"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useTransfer } from "@chipi-stack/nextjs"
-import { getWalletData } from "@/src/app/onboarding/_actions"
-import { useAuth } from "@clerk/nextjs"
-import { useWalletAssets, useTransactionFeeEstimate } from "@/src/hooks/use-wallet-assets"
-import { starknetService } from "@/src/services/starknet.service"
+} from "lucide-react";
+import { toast } from "@/src/hooks/use-toast";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useTransfer } from "@chipi-stack/nextjs";
+import { getWalletData } from "@/src/app/onboarding/_actions";
+import { useAuth, useUser } from "@clerk/nextjs";
+import {
+  useWalletAssets,
+  useTransactionFeeEstimate,
+} from "@/src/hooks/use-wallet-assets";
+import { starknetService } from "@/src/services/starknet.service";
+import { useCallAnyContract } from "@chipi-stack/nextjs";
 
 // Mediolano Protocol contract address (replace with actual contract)
-const MEDIOLANO_CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_MIP || "0x04b67deb64d285d3de684246084e74ad25d459989b7336786886ec63a28e0cd4"
+const MEDIOLANO_CONTRACT =
+  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_MIP ||
+  "0x04b67deb64d285d3de684246084e74ad25d459989b7336786886ec63a28e0cd4";
 
 export default function TransferPage() {
   const router = useRouter();
+
   const searchParams = useSearchParams();
   const preselectedAsset = searchParams.get("asset");
 
   // Clerk auth for token generation
-  const { getToken } = useAuth()
+  const { getToken } = useAuth();
+
+  const { callAnyContractAsync } = useCallAnyContract();
 
   // Chipi SDK hooks
-  const { transferAsync, isLoading: isTransferLoading, error: transferError } = useTransfer()
+  const {
+    transferAsync,
+    transferData,
+    isLoading: isTransferLoading,
+  } = useTransfer();
 
   // Form state
-  const [selectedAsset, setSelectedAsset] = useState(preselectedAsset || "")
-  const [recipientAddress, setRecipientAddress] = useState("")
-  const [recipientName, setRecipientName] = useState("")
-  const [transferNote, setTransferNote] = useState("")
-  const [estimatedFee, setEstimatedFee] = useState("0.001")
-  const [addressValidation, setAddressValidation] = useState<"valid" | "invalid" | "">("")
+  const [selectedAsset, setSelectedAsset] = useState(preselectedAsset || "");
+  const [recipientAddress, setRecipientAddress] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [transferNote, setTransferNote] = useState("");
+  const [estimatedFee, setEstimatedFee] = useState("0.001");
+  const [addressValidation, setAddressValidation] = useState<
+    "valid" | "invalid" | ""
+  >("");
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
 
   // Wallet and transaction state
   const [walletData, setWalletData] = useState<{
     publicKey: string;
-    encryptedPrivateKey: string
-  } | null>(null)
-  const [showPinDialog, setShowPinDialog] = useState(false)
-  const [isPinSubmitting, setIsPinSubmitting] = useState(false)
-  const [pinError, setPinError] = useState("")
-  const [txHash, setTxHash] = useState("")
+    encryptedPrivateKey: string;
+  } | null>(null);
+
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [isPinSubmitting, setIsPinSubmitting] = useState(false);
+  const [pinError, setPinError] = useState("");
+  const [txHash, setTxHash] = useState("");
 
   // On-chain data hooks
   const {
@@ -72,13 +107,13 @@ export default function TransferPage() {
     tokens,
     isLoading: isLoadingAssets,
     error: assetsError,
-    refetch: refetchAssets
-  } = useWalletAssets(walletData?.publicKey || null)
+    refetch: refetchAssets,
+  } = useWalletAssets(walletData?.publicKey || null);
 
-  const { estimateFee, isEstimating } = useTransactionFeeEstimate()
+  const { estimateFee, isEstimating } = useTransactionFeeEstimate();
 
   // Get transferable assets (NFTs for now, can expand to include tokens)
-  const ownedAssets = nfts.map(nft => ({
+  const ownedAssets = nfts.map((nft) => ({
     id: `${nft.contractAddress}_${nft.tokenId}`,
     slug: `${nft.contractAddress}-${nft.tokenId}`,
     title: nft.metadata?.name || `Token #${nft.tokenId}`,
@@ -89,157 +124,229 @@ export default function TransferPage() {
     contractAddress: nft.contractAddress,
     tokenId: nft.tokenId,
     attributes: nft.metadata?.attributes || [],
-  }))
+  }));
 
-  const selectedAssetData = ownedAssets.find((asset) => asset.slug === selectedAsset)
+  const selectedAssetData = ownedAssets.find(
+    (asset) => asset.slug === selectedAsset
+  );
 
   // Load wallet data on component mount
   useEffect(() => {
     const loadWallet = async () => {
       try {
-        const data = await getWalletData()
+        const data = await getWalletData();
         if (data?.publicKey && data?.encryptedPrivateKey) {
-          setWalletData(data)
+          setWalletData(data);
         } else {
           toast({
             title: "Wallet Not Found",
             description: "Please complete onboarding to create your wallet",
             variant: "destructive",
-          })
-          router.push("/onboarding")
+          });
+          router.push("/onboarding");
         }
       } catch (error) {
-        console.error('Error loading wallet:', error)
+        console.error("Error loading wallet:", error);
         toast({
           title: "Error Loading Wallet",
           description: "Failed to load wallet data",
           variant: "destructive",
-        })
+        });
       }
-    }
-    loadWallet()
-  }, [router])
+    };
+    loadWallet();
+  }, [router]);
 
-  // Validate Starknet address format
+  // Validate Starknet address format with debouncing
   const validateAddress = (address: string) => {
     if (!address) {
-      setAddressValidation("")
-      return
+      setAddressValidation("");
+      setIsValidatingAddress(false);
+      return;
     }
 
-    const validAddress = starknetService.validateAddress(address)
-    setAddressValidation(validAddress ? "valid" : "invalid")
-  }
+    setIsValidatingAddress(true);
+    const validAddress = starknetService.validateAddress(address);
+    setAddressValidation(validAddress ? "valid" : "invalid");
+    setIsValidatingAddress(false);
+  };
 
+  // Debounced address validation to prevent unresponsiveness
   useEffect(() => {
-    validateAddress(recipientAddress)
-  }, [recipientAddress])
+    if (!recipientAddress) {
+      setAddressValidation("");
+      setIsValidatingAddress(false);
+      return;
+    }
 
+    // Only validate if address is long enough (Starknet addresses are 64+ chars)
+    if (recipientAddress.length < 10) {
+      setAddressValidation("");
+      setIsValidatingAddress(false);
+      return;
+    }
 
+    setIsValidatingAddress(true);
+
+    // Debounce validation to prevent excessive calls
+    const timeoutId = setTimeout(() => {
+      validateAddress(recipientAddress);
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timeoutId);
+  }, [recipientAddress]);
+
+  // Optimized fee estimation with debouncing
   useEffect(() => {
+    if (
+      !selectedAssetData ||
+      !recipientAddress ||
+      !walletData ||
+      addressValidation !== "valid"
+    ) {
+      return;
+    }
+
     const estimateRealFee = async () => {
-      if (selectedAssetData && recipientAddress && walletData) {
-        try {
-          const feeEstimate = await estimateFee(
-            selectedAssetData.contractAddress || MEDIOLANO_CONTRACT,
-            "transfer", // or "transferFrom" depending on your contract
-            [walletData.publicKey, recipientAddress, selectedAssetData.tokenId || "1"],
-            walletData.publicKey
-          )
-          setEstimatedFee(feeEstimate.feeEstimateETH)
-        } catch (error) {
-          console.error('Fee estimation failed:', error)
-          setEstimatedFee("0.002") // Fallback
-        }
+      try {
+        const feeEstimate = await estimateFee(
+          selectedAssetData.contractAddress || MEDIOLANO_CONTRACT,
+          "transfer", // or "transferFrom" depending on your contract
+          [
+            walletData.publicKey,
+            recipientAddress,
+            selectedAssetData.tokenId || "1",
+          ],
+          walletData.publicKey
+        );
+        setEstimatedFee(feeEstimate.feeEstimateETH);
+      } catch (error) {
+        console.error("Fee estimation failed:", error);
+        setEstimatedFee("0.002"); // Fallback
       }
-    }
+    };
 
-    estimateRealFee()
-  }, [selectedAssetData, recipientAddress, walletData, estimateFee])
+    // Debounce fee estimation to prevent excessive API calls
+    const timeoutId = setTimeout(estimateRealFee, 1000); // Wait 1 second after validation
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    selectedAssetData,
+    recipientAddress,
+    walletData,
+    addressValidation,
+    estimateFee,
+  ]);
+
+  // const transferNFT = async (
+  //   from: string,
+  //   to: string,
+  //   tokenId: string,
+  //   token: string,
+  //   pin: string
+  // ) => {
+  //   if (!walletData) {
+  //     throw new Error("Wallet data not available");
+  //   }
+  //   if (!tokenId) {
+  //     throw new Error("Token ID is required for NFT transfer");
+  //   }
+
+  //   try {
+
+  //     return result;
+  //   } catch (error) {
+  //     console.error("TransferNFT error details:", error);
+  //     throw error;
+  //   }
+  // };
 
   // Handle PIN submission for transfer
   const handlePinSubmit = async (pin: string) => {
     if (!walletData || !selectedAssetData) {
-      setPinError("Missing wallet or asset data")
-      return
+      setPinError("Missing wallet or asset data");
+      return;
     }
 
-    setIsPinSubmitting(true)
-    setPinError("")
+    setIsPinSubmitting(true);
+    setPinError("");
 
     try {
-      console.log('Getting Clerk authentication token...')
-      const token = await getToken({ template: process.env.NEXT_PUBLIC_CLERK_TEMPLATE_NAME })
-      console.log("Token received:", token)
+      console.log("Getting Clerk authentication token...");
+
+      const token = await getToken({
+        template: process.env.NEXT_PUBLIC_CLERK_TEMPLATE_NAME,
+      });
+
       if (!token) {
-        throw new Error("No bearer token found")
+        throw new Error("No bearer token found");
       }
 
-      console.log('Initiating transfer with PIN...')
+      console.log("Initiating transfer with PIN...");
 
-      // For NFT transfers, amount is typically "1" and decimals is 0
-      const transferResult = await transferAsync({
-        params:{
-          encryptKey: pin,
-          amount:1,
-          recipient:recipientAddress,
-          token:"ETH",
-          wallet:{
-            publicKey: walletData.publicKey,
-            encryptedPrivateKey: walletData.encryptedPrivateKey
-          }
-          // wallet: {
-          //   publicKey: walletData.publicKey,
-          //   encryptedPrivateKey: walletData.encryptedPrivateKey
-          // },
-          // contractAddress: MEDIOLANO_CONTRACT,
-          // recipient: recipientAddress,   
-          // amount: 1     
-          // // amount: "1", // NFT transfer
-          // decimals: 0 // NFTs typically have 0 decimals
-        },
+      // Validate that we have a tokenId
+      if (!selectedAssetData.tokenId) {
+        throw new Error("Selected asset does not have a token ID");
+      }
+
+      const transferResult = await callAnyContractAsync({
+        encryptKey: pin,
         bearerToken: token,
-      })
+        wallet: {
+          publicKey: walletData.publicKey,
+          encryptedPrivateKey: walletData.encryptedPrivateKey,
+        },
+        contractAddress: MEDIOLANO_CONTRACT,
+        calls: [
+          {
+            contractAddress: MEDIOLANO_CONTRACT,
+            entrypoint: "transfer_from",
+            calldata: [
+              walletData.publicKey,
+              recipientAddress,
+              cairo.uint256(selectedAssetData.tokenId),
+            ],
+          },
+        ],
+      });
 
-      console.log('Transfer result:', transferResult)
+      console.log("Transfer initiated successfully", transferResult);
+      setShowPinDialog(false);
 
-      if (transferResult) {
-        setTxHash(transferResult)
-        setShowPinDialog(false)
+      toast({
+        title: "🎉 Transfer Initiated!",
+        description: "Your IP asset is being transferred on the blockchain",
+      });
 
-        toast({
-          title: "🎉 Transfer Initiated!",
-          description: "Your IP asset is being transferred on the blockchain",
-        })
-
-        // Optional: redirect after successful transfer
-        setTimeout(() => {
-          router.push("/portfolio")
-        }, 3000)
-      }
+      // Optional: redirect after successful transfer
+      setTimeout(() => {
+        router.push("/portfolio");
+      }, 3000);
     } catch (error) {
-      console.error('Transfer failed:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Transfer failed'
-      setPinError(errorMessage)
+      console.error("Transfer failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Transfer failed";
+      setPinError(errorMessage);
 
       toast({
         title: "Transfer Failed",
         description: errorMessage,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsPinSubmitting(false)
+      setIsPinSubmitting(false);
     }
-  }
+  };
 
   const handleTransfer = async () => {
     if (!selectedAsset || !recipientAddress || addressValidation !== "valid") {
       toast({
         title: "Invalid Transfer Details",
-        description: "Please check all required fields and ensure the address is valid",
+        description:
+          "Please check all required fields and ensure the address is valid",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (!walletData) {
@@ -247,15 +354,19 @@ export default function TransferPage() {
         title: "Wallet Not Available",
         description: "Please ensure your wallet is properly loaded",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     // Show PIN dialog for authentication
-    setShowPinDialog(true)
-  }
+    setShowPinDialog(true);
+  };
 
-  const isFormValid = selectedAsset && recipientAddress && addressValidation === "valid" && walletData
+  const isFormValid =
+    selectedAsset &&
+    recipientAddress &&
+    addressValidation === "valid" &&
+    walletData;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
@@ -274,7 +385,9 @@ export default function TransferPage() {
               </Button>
 
               <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold text-foreground mb-3">Transfer IP Asset</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-3">
+                  Transfer IP Asset
+                </h1>
                 <p className="text-muted-foreground text-lg">
                   Send your intellectual property to another wallet securely
                 </p>
@@ -318,7 +431,9 @@ export default function TransferPage() {
                     <div className="text-sm font-bold text-blue-900 dark:text-blue-100">
                       {isLoadingAssets ? "..." : ownedAssets.length}
                     </div>
-                    <div className="text-xs text-blue-700 dark:text-blue-300">Available</div>
+                    <div className="text-xs text-blue-700 dark:text-blue-300">
+                      Available
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -331,7 +446,9 @@ export default function TransferPage() {
                     <div className="text-sm font-bold text-green-900 dark:text-green-100">
                       {isEstimating ? "..." : `${estimatedFee} ETH`}
                     </div>
-                    <div className="text-xs text-green-700 dark:text-green-300">Est. Fee</div>
+                    <div className="text-xs text-green-700 dark:text-green-300">
+                      Est. Fee
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -344,7 +461,9 @@ export default function TransferPage() {
                     <div className="text-sm font-bold text-purple-900 dark:text-purple-100">
                       {walletData ? "Ready" : "Loading"}
                     </div>
-                    <div className="text-xs text-purple-700 dark:text-purple-300">Wallet</div>
+                    <div className="text-xs text-purple-700 dark:text-purple-300">
+                      Wallet
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -365,10 +484,16 @@ export default function TransferPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="asset-select" className="text-sm font-medium">
+                    <Label
+                      htmlFor="asset-select"
+                      className="text-sm font-medium"
+                    >
                       Choose Asset to Transfer *
                     </Label>
-                    <Select value={selectedAsset} onValueChange={setSelectedAsset}>
+                    <Select
+                      value={selectedAsset}
+                      onValueChange={setSelectedAsset}
+                    >
                       <SelectTrigger className="mt-2 bg-background/50">
                         <SelectValue placeholder="Select an asset from your portfolio" />
                       </SelectTrigger>
@@ -376,11 +501,15 @@ export default function TransferPage() {
                         {isLoadingAssets ? (
                           <div className="p-4 text-center">
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                            <p className="text-sm text-muted-foreground mt-2">Loading assets...</p>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Loading assets...
+                            </p>
                           </div>
                         ) : ownedAssets.length === 0 ? (
                           <div className="p-4 text-center">
-                            <p className="text-sm text-muted-foreground">No assets found</p>
+                            <p className="text-sm text-muted-foreground">
+                              No assets found
+                            </p>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -402,8 +531,12 @@ export default function TransferPage() {
                                   className="w-8 h-8 rounded object-cover"
                                 />
                                 <div>
-                                  <span className="font-medium">{asset.title}</span>
-                                  <span className="text-sm text-muted-foreground ml-2">({asset.type})</span>
+                                  <span className="font-medium">
+                                    {asset.title}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground ml-2">
+                                    ({asset.type})
+                                  </span>
                                 </div>
                               </div>
                             </SelectItem>
@@ -418,14 +551,18 @@ export default function TransferPage() {
                       <CardContent className="p-4">
                         <div className="flex items-center space-x-4">
                           <Image
-                            src={selectedAssetData.mediaUrl || "/placeholder.svg"}
+                            src={
+                              selectedAssetData.mediaUrl || "/placeholder.svg"
+                            }
                             alt={selectedAssetData.title}
                             width={60}
                             height={60}
                             className="w-15 h-15 rounded-lg object-cover"
                           />
                           <div className="flex-1">
-                            <h3 className="font-semibold text-foreground">{selectedAssetData.title}</h3>
+                            <h3 className="font-semibold text-foreground">
+                              {selectedAssetData.title}
+                            </h3>
                             <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
                               {selectedAssetData.description}
                             </p>
@@ -436,11 +573,12 @@ export default function TransferPage() {
                               <Badge variant="outline" className="text-xs">
                                 Token #{selectedAssetData.tokenId}
                               </Badge>
-                              {selectedAssetData.attributes && selectedAssetData.attributes.length > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  {selectedAssetData.attributes.length} traits
-                                </Badge>
-                              )}
+                              {selectedAssetData.attributes &&
+                                selectedAssetData.attributes.length > 0 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {selectedAssetData.attributes.length} traits
+                                  </Badge>
+                                )}
                             </div>
                           </div>
                         </div>
@@ -463,7 +601,10 @@ export default function TransferPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="recipient-address" className="text-sm font-medium">
+                    <Label
+                      htmlFor="recipient-address"
+                      className="text-sm font-medium"
+                    >
                       Wallet Address *
                     </Label>
                     <div className="flex space-x-2 mt-2">
@@ -473,12 +614,13 @@ export default function TransferPage() {
                           placeholder="0x..."
                           value={recipientAddress}
                           onChange={(e) => setRecipientAddress(e.target.value)}
-                          className={`bg-background/50 pr-10 transition-all ${addressValidation === "valid"
-                            ? "border-green-500 focus:border-green-500"
-                            : addressValidation === "invalid"
+                          className={`bg-background/50 pr-10 transition-all ${
+                            addressValidation === "valid"
+                              ? "border-green-500 focus:border-green-500"
+                              : addressValidation === "invalid"
                               ? "border-red-500 focus:border-red-500"
                               : ""
-                            }`}
+                          }`}
                         />
                         {addressValidation === "valid" && (
                           <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500 animate-pulse" />
@@ -486,21 +628,35 @@ export default function TransferPage() {
                         {addressValidation === "invalid" && (
                           <AlertTriangle className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-red-500 animate-pulse" />
                         )}
+                        {isValidatingAddress && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-primary"></div>
+                        )}
                       </div>
-                      <Button variant="outline" size="sm" className="px-3 hover:scale-105 transition-transform">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-3 hover:scale-105 transition-transform"
+                      >
                         <Scan className="w-4 h-4" />
                       </Button>
                     </div>
                     {addressValidation === "invalid" && (
-                      <p className="text-xs text-red-500 mt-1 animate-fade-in">Please enter a valid Starknet address</p>
+                      <p className="text-xs text-red-500 mt-1 animate-fade-in">
+                        Please enter a valid Starknet address
+                      </p>
                     )}
                     {addressValidation === "valid" && (
-                      <p className="text-xs text-green-500 mt-1 animate-fade-in">Valid Starknet address</p>
+                      <p className="text-xs text-green-500 mt-1 animate-fade-in">
+                        Valid Starknet address
+                      </p>
                     )}
                   </div>
 
                   <div>
-                    <Label htmlFor="recipient-name" className="text-sm font-medium">
+                    <Label
+                      htmlFor="recipient-name"
+                      className="text-sm font-medium"
+                    >
                       Recipient Name (Optional)
                     </Label>
                     <Input
@@ -527,7 +683,10 @@ export default function TransferPage() {
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <Label htmlFor="transfer-note" className="text-sm font-medium">
+                    <Label
+                      htmlFor="transfer-note"
+                      className="text-sm font-medium"
+                    >
                       Add a Note (Optional)
                     </Label>
                     <Textarea
@@ -554,25 +713,43 @@ export default function TransferPage() {
                         <Info className="w-6 h-6 text-primary-foreground" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-foreground mb-2">Transfer Summary</h3>
+                        <h3 className="font-bold text-foreground mb-2">
+                          Transfer Summary
+                        </h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Asset:</span>
-                            <span className="font-medium text-foreground">{selectedAssetData.title}</span>
+                            <span className="text-muted-foreground">
+                              Asset:
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {selectedAssetData.title}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">To:</span>
                             <span className="font-medium text-foreground">
-                              {recipientName || `${recipientAddress.slice(0, 6)}...${recipientAddress.slice(-4)}`}
+                              {recipientName ||
+                                `${recipientAddress.slice(
+                                  0,
+                                  6
+                                )}...${recipientAddress.slice(-4)}`}
                             </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Network Fee:</span>
-                            <span className="font-medium text-foreground">{estimatedFee} ETH</span>
+                            <span className="text-muted-foreground">
+                              Network Fee:
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {estimatedFee} ETH
+                            </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Network:</span>
-                            <span className="font-medium text-foreground">Starknet</span>
+                            <span className="text-muted-foreground">
+                              Network:
+                            </span>
+                            <span className="font-medium text-foreground">
+                              Starknet
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -590,20 +767,30 @@ export default function TransferPage() {
                         <CheckCircle className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-green-900 dark:text-green-100 mb-2">Transfer Initiated!</h3>
+                        <h3 className="font-bold text-green-900 dark:text-green-100 mb-2">
+                          Transfer Initiated!
+                        </h3>
                         <div className="space-y-2">
                           <p className="text-sm text-green-700 dark:text-green-300">
-                            Your IP asset transfer has been submitted to the blockchain.
+                            Your IP asset transfer has been submitted to the
+                            blockchain.
                           </p>
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-green-900 dark:text-green-100">Transaction:</span>
+                            <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                              Transaction:
+                            </span>
                             <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono break-all">
                               {txHash}
                             </code>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(`${process.env.NEXT_PUBLIC_EXPLORER_URL}/tx/${txHash}`, '_blank')}
+                              onClick={() =>
+                                window.open(
+                                  `${process.env.NEXT_PUBLIC_EXPLORER_URL}/tx/${txHash}`,
+                                  "_blank"
+                                )
+                              }
                               className="shrink-0"
                             >
                               <ExternalLink className="w-3 h-3" />
@@ -617,7 +804,10 @@ export default function TransferPage() {
               )}
 
               {/* Transfer Button */}
-              <div className="animate-fade-in-up" style={{ animationDelay: "800ms" }}>
+              <div
+                className="animate-fade-in-up"
+                style={{ animationDelay: "800ms" }}
+              >
                 <Dialog open={showPinDialog} onOpenChange={setShowPinDialog}>
                   <DialogTrigger asChild>
                     <Button
@@ -637,7 +827,9 @@ export default function TransferPage() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle className="sr-only">Authenticate Transfer</DialogTitle>
+                      <DialogTitle className="sr-only">
+                        Authenticate Transfer
+                      </DialogTitle>
                     </DialogHeader>
                     <PinInput
                       onSubmit={handlePinSubmit}
@@ -656,5 +848,5 @@ export default function TransferPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

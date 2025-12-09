@@ -7,6 +7,7 @@ import type {
   IPortfolioReturnType,
   IPortfolioReturnTypeObj,
 } from "../types/asset";
+import { CONTRACTS } from "../services/constant";
 
 interface UseWalletAssetsReturn {
   assets: WalletAssets | null;
@@ -81,6 +82,8 @@ export function useGetPortfolioAssets(
   };
 }
 
+
+
 /**
  * Hook to fetch and manage wallet assets from StarkNet
  */
@@ -110,10 +113,7 @@ export function useWalletAssets(
     setError(null);
 
     try {
-      console.log("Fetching assets for wallet:", validAddress);
-      const walletAssets = await starknetService.getWalletAssets(validAddress);
-
-      console.log("Fetched assets:", walletAssets);
+      const walletAssets = await starknetService.getWalletAssetsV2(validAddress);
       setAssets(walletAssets);
       setError(null);
     } catch (err) {
