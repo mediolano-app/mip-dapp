@@ -1,0 +1,474 @@
+openapi: 3.0.3
+info:
+  title: NFT Indexer API
+  version: 1.0.0
+  description: API for querying indexed NFT data from Starknet contracts.
+
+servers:
+  - url: /api
+    description: Local development
+
+paths:
+  /assets:
+    get:
+      summary: Get all assets
+      parameters:
+        - in: query
+          name: indexerSource
+          schema:
+            type: string
+            enum: [MEDIALANO-DAPP, MEDIALANO-MIPP]
+        - in: query
+          name: collectionId
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [mintedAtBlock, id]
+            default: mintedAtBlock
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: List of assets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAssets"
+
+  /assets/{id}:
+    get:
+      summary: Get single asset
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Single asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /assets/owner/{owner}:
+    get:
+      summary: Get assets by owner
+      parameters:
+        - in: path
+          name: owner
+          required: true
+          schema: { type: string }
+        - in: query
+          name: indexerSource
+          schema:
+            type: string
+            enum: [MEDIALANO-DAPP, MEDIALANO-MIPP]
+        - in: query
+          name: collectionId
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Assets owned by address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAssets"
+
+  /collections:
+    get:
+      summary: Get all collections
+      parameters:
+        - in: query
+          name: indexerSource
+          schema: { type: string }
+        - in: query
+          name: creator
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: List of collections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCollections"
+
+  /collections/{id}:
+    get:
+      summary: Get single collection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Collection details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+
+  /collections/creator/{creator}:
+    get:
+      summary: Get collections by creator
+      parameters:
+        - in: path
+          name: creator
+          required: true
+          schema: { type: string }
+        - in: query
+          name: indexerSource
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Creator’s collections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCollections"
+
+  /transfers:
+    get:
+      summary: Get all transfers
+      parameters:
+        - in: query
+          name: tokenId
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string }
+        - in: query
+          name: to
+          schema: { type: string }
+        - in: query
+          name: indexerSource
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: Transfer list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTransfers"
+
+  /transfers/token/{tokenId}:
+    get:
+      summary: Get transfers by token
+      parameters:
+        - in: path
+          name: tokenId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Transfers for token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTransfers"
+
+  /stats:
+    get:
+      summary: Get overall stats
+      responses:
+        "200":
+          description: API statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+
+  /stats/indexer:
+    get:
+      summary: Get stats by indexer
+      parameters:
+        - in: query
+          name: indexerSource
+          schema: { type: string }
+      responses:
+        "200":
+          description: Indexer-specific stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Server health
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
+  /reports/submit:
+    post:
+      summary: Submit a report
+      description: Submit a report about an asset, collection, or profile for moderation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportSubmissionRequest"
+      responses:
+        "201":
+          description: Report submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSubmissionResponse"
+        "400":
+          description: Invalid report type
+        "409":
+          description: Duplicate report
+        "500":
+          description: Internal server error
+
+  /reports:
+    get:
+      summary: Get all reports
+      description: Fetch paginated reports for moderation dashboard.
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, under_review, resolved, dismissed]
+        - in: query
+          name: contentType
+          schema:
+            type: string
+            enum: [asset, collection, profile]
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportListResponse"
+        "500":
+          description: Internal server error
+
+  /reports/{id}:
+    get:
+      summary: Get specific report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Single report details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDetailResponse"
+        "404":
+          description: Report not found
+        "500":
+          description: Internal server error
+
+  /reports/{id}/status:
+    patch:
+      summary: Update report status
+      description: Update the moderation status of a report.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, under_review, resolved, dismissed]
+              required: [status]
+      responses:
+        "200":
+          description: Report status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportStatusResponse"
+        "404":
+          description: Report not found
+        "500":
+          description: Internal server error
+
+  /reports/health:
+    get:
+      summary: Reports service health check
+      responses:
+        "200":
+          description: Reports service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  timestamp: { type: string, format: date-time }
+        "503":
+          description: Reports service is unhealthy
+
+components:
+  schemas:
+    Asset:
+      type: object
+      properties:
+        id: { type: string }
+        collectionId: { type: string }
+        owner: { type: string }
+        tokenUri: { type: string }
+        mintedAtBlock: { type: integer }
+        indexerSource: { type: string }
+
+    Collection:
+      type: object
+      properties:
+        id: { type: string }
+        creator: { type: string }
+        metadataUri: { type: string }
+        createdAtBlock: { type: integer }
+        indexerSource: { type: string }
+        assetCount: { type: integer }
+
+    Transfer:
+      type: object
+      properties:
+        id: { type: string }
+        tokenId: { type: string }
+        from: { type: string }
+        to: { type: string }
+        block: { type: integer }
+        indexerSource: { type: string }
+
+    Stats:
+      type: object
+      properties:
+        totalAssets: { type: integer }
+        totalCollections: { type: integer }
+        totalTransfers: { type: integer }
+
+    PaginatedAssets:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Asset" }
+        pagination:
+          type: object
+          properties:
+            total: { type: integer }
+            limit: { type: integer }
+            offset: { type: integer }
+            hasMore: { type: boolean }
+
+    PaginatedCollections:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Collection" }
+        pagination:
+          type: object
+          properties:
+            total: { type: integer }
+            limit: { type: integer }
+            offset: { type: integer }
+            hasMore: { type: boolean }
+
+    PaginatedTransfers:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Transfer" }
+        pagination:
+          type: object
+          properties:
+            total: { type: integer }
+            limit: { type: integer }
+            offset: { type: integer }
+            hasMore: { type: boolean }

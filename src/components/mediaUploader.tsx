@@ -151,7 +151,7 @@ const MediaUploader = forwardRef<MediaUploaderRef, MediaUploaderProps>(
         <Label className="text-base font-semibold flex items-center space-x-2">
           <Upload className="w-5 h-5 text-primary" />
           <span>{label}</span>
-          <Badge variant="secondary" className="text-xs px-2 py-0">
+          <Badge variant="outline" className="text-xs px-2 py-0">
             Optional
           </Badge>
         </Label>
@@ -160,7 +160,7 @@ const MediaUploader = forwardRef<MediaUploaderRef, MediaUploaderProps>(
           value={mediaType}
           onValueChange={(val) => setMediaType(val as "upload" | "url")}
         >
-          <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+          <TabsList className="grid max-w-screen-sm grid-cols-2 bg-muted/50">
             <TabsTrigger
               value="upload"
               className="data-[state=active]:bg-background"
@@ -204,10 +204,10 @@ const MediaUploader = forwardRef<MediaUploaderRef, MediaUploaderProps>(
                   </div>
                   <div>
                     <p className="font-medium text-foreground mb-1">
-                      Drop files here or click to browse
+                      Drop files here or click to browse your device
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Images, videos, audio, documents (Max 100MB)
+                      MIP may require access to your camera and photo library to take pictures or let you upload media. Your media is not transmitted to our servers, they will be stored directly on a decentralized file server. You can change permissions at any time in your device settings.
                     </p>
                   </div>
                 </div>
@@ -219,7 +219,7 @@ const MediaUploader = forwardRef<MediaUploaderRef, MediaUploaderProps>(
                       alt="Preview"
                       width={300}
                       height={150}
-                      className="w-full h-32 object-cover rounded-lg mx-auto"
+                      className="max-w-screen-sm h-32 object-cover rounded-lg mx-auto"
                     />
                     <Button
                       size="sm"
@@ -233,10 +233,12 @@ const MediaUploader = forwardRef<MediaUploaderRef, MediaUploaderProps>(
                       <X className="w-3 h-3" />
                     </Button>
                   </div>
+                  {/*
                   <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>{mediaFile?.name}</span>
+                     <span>{mediaFile?.name}</span> 
                   </div>
+                  */}
                 </div>
               )}
 

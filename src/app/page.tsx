@@ -7,7 +7,7 @@ import { TrendingUp, Users, Shield, Zap } from "lucide-react"
 import { FeaturedArticle } from "@/src/components/news/featured-article"
 import { newsArticles, getAllCategories } from "@/src/lib/news-data"
 import { PrismHero } from "@/src/components/prism-hero"
-
+import { Badge } from "@/src/components/ui/badge"
 
 export default function HomePage() {
 
@@ -28,7 +28,7 @@ export default function HomePage() {
       </div>*/}
 
 
-      {/* New Prism Hero Section */}
+      {/* Prism Hero Section */}
         <div className="px-4 pt-6">
           <div className="mx-auto max-w-6xl">
             <PrismHero
@@ -47,14 +47,19 @@ export default function HomePage() {
 
 
 
-        {/* Main Timeline Section 
-        <div className="px-4 pt-6 pb-8">
-          <div className="max-w-2xl mx-auto">
+        {/* Main Timeline Section */}
+        <div className="px-4 pt-12 pb-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-2">
+
+              <Badge variant="outline">Explore content from creators worldwide:</Badge>
+
+            </div>
             <Suspense fallback={<TimelineSkeleton />}>
               <Timeline />
             </Suspense>
           </div>
-        </div>*/}
+        </div>
 
         {/* Stats Section - Moved to Bottom 
         <div className="px-4 py-8 border-t border-border/30 bg-muted/20 backdrop-blur-sm">

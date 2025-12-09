@@ -1,0 +1,17 @@
+# Node.js
+node_modules
+dist
+.DS_Store
+
+# Apibara build artifacts
+.apibara
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+
+#drizzle
+**/drizzle/**

@@ -126,7 +126,7 @@ export default function NewsArticlePage({ params }: NewsArticlePageProps) {
 
         {/* Featured Image */}
         <div className="relative aspect-video mb-8 overflow-hidden rounded-xl">
-          <Image src={article.image || "/placeholder.svg"} alt={article.title} fill className="object-cover" priority />
+          <Image src={article.image || "/placeholder.svg"} alt={article.title} fill={true} className="object-cover" priority />
         </div>
 
         {/* Article Actions 

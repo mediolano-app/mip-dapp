@@ -14,7 +14,7 @@ interface ArticlesGridProps {
   showCount?: boolean
 }
 
-export function ArticlesGrid({ articles, title = "Latest Articles", showCount = true }: ArticlesGridProps) {
+export function ArticlesGrid({ articles, title = "Latest", showCount = true }: ArticlesGridProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -94,7 +94,9 @@ export function ArticlesGrid({ articles, title = "Latest Articles", showCount = 
             <CardContent className="p-6 space-y-4">
               <div className="space-y-3">
                 <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                  <Link href={`/news/${article.slug}`}>
                   {article.title}
+                  </Link>
                 </h3>
                 <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">{article.excerpt}</p>
               </div>
@@ -105,7 +107,7 @@ export function ArticlesGrid({ articles, title = "Latest Articles", showCount = 
                     <User className="w-4 h-4 text-primary" />
                   </div>
                   <div className="text-sm">
-                    <p className="font-medium">{article.author.name}</p>
+                    {/* <p className="font-medium">{article.author.name}</p> */}
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <span>{formatDate(article.publishedAt)}</span>
                       {article.readTime && (

@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/src/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useCallAnyContract } from "@chipi-pay/chipi-sdk";
+import { useCallAnyContract } from "@chipi-stack/nextjs";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { FormWrapper } from "../ui/forms/wrapper";
 import { TextAreaInput, TextInput } from "../ui/forms/input";
@@ -107,18 +107,18 @@ export default function CreateAssetView() {
     title: "",
     description: "",
     mediaUrl: "",
-    externalUrl: "https://mip.mediolano.app",
+    externalUrl: "https://example.com",
+    author: publicKey || "", 
 
     // Advanced fields with smart defaults
     type: "post", // Default to "Post" like social media
     tags: [] as string[],
-    author: "",
     collection: collections[0].label, // Default to MIP Collection
     licenceType: licenseType[0],
     licenseDetails: "",
     ipVersion: "1.0",
-    commercialUse: false,
-    modifications: false,
+    commercialUse: true,
+    modifications: true,
     attribution: true,
     registrationDate: new Date().toISOString().split("T")[0],
     protectionStatus: "Protected",
@@ -143,7 +143,7 @@ export default function CreateAssetView() {
       });
 
       if (!token) {
-        throw new Error("No bearer token found");
+        throw new Error("No bearer token found. Please try to login again.");
       }
 
       // Create metadata object (in production, this would be uploaded to IPFS)
@@ -167,12 +167,12 @@ export default function CreateAssetView() {
             trait_type: "Attribution",
             value: values.attribution.toString(),
           },
-          { trait_type: "IP Version", value: values.ipVersion },
+          { trait_type: "Version", value: values.ipVersion },
           {
-            trait_type: "Protection Status",
+            trait_type: "Protection",
             value: values.protectionStatus,
           },
-          { trait_type: "Protection Scope", value: values.protectionScope },
+          { trait_type: "Scope", value: values.protectionScope },
           { trait_type: "Tags", value: values.tags.join(", ") },
         ],
         properties: {
@@ -195,28 +195,50 @@ export default function CreateAssetView() {
       }
 
       const result = await uploadToIpfs(file, metadata);
-      console.log("Uploaded:", result);
+      //console.log("Uploaded:", result);
 
       // Mint NFT using Chipi SDK's callAnyContract
-      const mintResult = await callAnyContractAsync({
-        encryptKey: pin,
-        bearerToken: token,
-        wallet: {
-          publicKey: publicKey,
-          encryptedPrivateKey: encryptedPrivateKey,
-        },
-        contractAddress: MEDIOLANO_CONTRACT,
-        calls: [
-          {
-            contractAddress: MEDIOLANO_CONTRACT,
-            entrypoint: "mint_item",
-            calldata: [
-              publicKey, //
-              result.cid, // tokenURI (metadata)
-            ],
+        const mintResult = await callAnyContractAsync({
+        params:{
+          encryptKey: pin,
+          wallet: {
+            publicKey: publicKey,
+            encryptedPrivateKey: encryptedPrivateKey,
           },
-        ],
+          contractAddress: MEDIOLANO_CONTRACT,
+          calls: [
+            {
+              contractAddress: MEDIOLANO_CONTRACT,
+              entrypoint: "mint_item",
+              calldata: [
+                publicKey, //
+                result.cid, // tokenURI (metadata)
+              ],
+            },
+          ],
+          },
+          bearerToken: token,
       });
+
+      // const mintResult = await callAnyContractAsync({
+      //   encryptKey: pin,
+      //   bearerToken: token,
+      //   wallet: {
+      //     publicKey: publicKey,
+      //     encryptedPrivateKey: encryptedPrivateKey,
+      //   },
+      //   contractAddress: MEDIOLANO_CONTRACT,
+      //   calls: [
+      //     {
+      //       contractAddress: MEDIOLANO_CONTRACT,
+      //       entrypoint: "mint_item",
+      //       calldata: [
+      //         publicKey, //
+      //         result.cid, // tokenURI (metadata)
+      //       ],
+      //     },
+      //   ],
+      // });
 
       console.log("Mint result:", mintResult);
 
@@ -226,12 +248,15 @@ export default function CreateAssetView() {
         setShowPinDialog(false);
 
         toast({
-          title: "🎉 IP Asset Created!",
+          title: "Asset Created!",
           description: "Your content is now protected on the blockchain",
         });
 
         // Force full reload to ensure latest data
-        window.location.assign("/portfolio");
+        setTimeout(function() {
+            window.location.assign("/portfolio");
+        }, 7000);
+
       }
     } catch (error) {
       console.error("Minting failed:", error);
@@ -241,7 +266,7 @@ export default function CreateAssetView() {
 
       toast({
         title: "Minting Failed",
-        description: errorMessage,
+        description: "PIN incorrect. Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
@@ -252,8 +277,8 @@ export default function CreateAssetView() {
   const handleCreate = useCallback(async () => {
     if (!user) {
       toast({
-        title: "Wallet Not Available",
-        description: "Please ensure your wallet is properly loaded",
+        title: "Encrypted wallet not connected",
+        description: "Please login again to access your encrypted wallet",
         variant: "destructive",
       });
       return;
@@ -280,8 +305,7 @@ export default function CreateAssetView() {
                   </h1>
                 </div>
                 <p className="text-muted-foreground text-sm">
-                  Share your creative work and protect it as intellectual
-                  property
+                  Share your creative work and protect it as intellectual property
                 </p>
               </div>
 
@@ -300,7 +324,7 @@ export default function CreateAssetView() {
                     {/* Main Creation Form */}
                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                       <CardContent className="p-6 space-y-6">
-                        {/* Title - Primary Field */}
+                        {/* Title */}
                         <TextInput
                           placeholder="What's your creation called?"
                           label="Title"
@@ -310,24 +334,40 @@ export default function CreateAssetView() {
                           }
                         />
 
-                        {/* Description - Primary Field */}
+                        {/* Description */}
                         <TextAreaInput
                           labelIcon={
                             <FileText className="w-5 h-5 text-primary" />
                           }
                           label="Description"
                           name="description"
+                          placeholder="Describe your creation"
                         />
 
-                        {/* Media Upload - Optional */}
+                        {/* Media Upload */}
                         <MediaUploader
                           ref={uploaderRef}
                           onChange={(url, file) => console.log(url)}
                         />
-                        {/* External URL - Primary Field */}
+                        {/* Creator/Author */}
+                        <div className="space-y-2">
+                          <TextInput
+                            placeholder="Your name or preferred creator identity"
+                            label="Creator Name"
+                            name="author"
+                            labelIcon={
+                              <PenTool className="w-5 h-5 text-primary" />
+                            }
+                          />
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            This is how you'll be credited as the creator. We've pre-filled this with your wallet address, but you can change it to your name, username, or brand.
+                          </p>
+                        </div>
+
+                        {/* External URL */}
                         <TextInput
-                          placeholder="https://yourwebsite.com"
-                          label="External URL"
+                          placeholder="https://example.com"
+                          label="Your link"
                           name="externalUrl"
                           labelIcon={
                             <ExternalLink className="w-5 h-5 text-primary" />
@@ -416,8 +456,8 @@ export default function CreateAssetView() {
 
                             <Separator />
 
-                            {/* Collection & Author */}
-                            <div className="grid grid-cols-1 items-start md:grid-cols-2 gap-4">
+                            {/* Collection */}
+                            <div className="grid grid-cols-1 gap-4">
                               <SelectInput
                                 label="Collection"
                                 data={collections || []}
@@ -428,15 +468,6 @@ export default function CreateAssetView() {
                                 defaultValue={collections?.[0]?.label}
                                 handleSubText={(item) => item.description}
                                 name="collection"
-                                labelClass="text-sm font-medium flex items-center space-x-2"
-                              />
-
-                              <TextInput
-                                id="author"
-                                placeholder=""
-                                label="Author"
-                                name="author"
-                                showBadge={false}
                                 labelClass="text-sm font-medium flex items-center space-x-2"
                               />
                             </div>
@@ -628,20 +659,19 @@ export default function CreateAssetView() {
                             </h3>
                             <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
                               Your IP will be protected on Starknet with
-                              immutable proof of ownership and global copyright
-                              protection.
+                              immutable proof of ownership.
                             </p>
                             <div className="grid grid-cols-3 gap-4">
                               <div className="text-center">
                                 <Clock className="w-6 h-6 mx-auto text-primary mb-1" />
                                 <p className="text-xs font-medium">
-                                  ~2 minutes
+                                  Seconds
                                 </p>
                               </div>
                               <div className="text-center">
                                 <Globe className="w-6 h-6 mx-auto text-green-500 mb-1" />
                                 <p className="text-xs font-medium">
-                                  181 Countries
+                                  Worldwide
                                 </p>
                               </div>
                               <div className="text-center">
@@ -663,7 +693,7 @@ export default function CreateAssetView() {
                             </div>
                             <div className="flex-1">
                               <h3 className="font-bold text-green-900 dark:text-green-100 mb-2">
-                                IP Asset Created!
+                                Asset Created!
                               </h3>
                               <div className="space-y-2">
                                 <p className="text-sm text-green-700 dark:text-green-300">
@@ -750,7 +780,7 @@ export default function CreateAssetView() {
                                 {isMinting ? (
                                   <div className="flex items-center space-x-3">
                                     <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Minting Your IP Asset...</span>
+                                    <span>Creating Your IP Asset...</span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center space-x-3">
@@ -770,7 +800,7 @@ export default function CreateAssetView() {
                                 onSubmit={(pin) => handlePinSubmit(pin, values)}
                                 isLoading={isPinSubmitting || loading}
                                 title="Authenticate Minting"
-                                description="Enter your wallet PIN to mint your IP asset"
+                                description="Enter your PIN to create your content"
                                 submitText="Mint Asset"
                                 error={pinError}
                                 onCancel={() => setShowPinDialog(false)}

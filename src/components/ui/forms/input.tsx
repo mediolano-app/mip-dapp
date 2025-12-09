@@ -25,7 +25,7 @@ export const TextInput = ({
 
   return (
     <div>
-      <div className="relative grid space-y-2">
+      <div className="relative grid space-y-4">
         <Label
           htmlFor={props?.id || props?.label}
           className={cn(
@@ -36,7 +36,7 @@ export const TextInput = ({
           {labelIcon ?? labelIcon}
           <span>{props.label}</span>
           {showBadge && (
-            <Badge variant="destructive" className="text-xs px-2 py-0">
+            <Badge variant="outline" className="text-xs px-2 py-0">
               Required
             </Badge>
           )}
@@ -87,14 +87,14 @@ export const TextAreaInput = ({
 
   return (
     <div>
-      <div className="relative grid space-y-2">
+      <div className="relative grid space-y-4">
         <Label
           htmlFor={props?.id || props?.label}
           className="text-base font-semibold flex items-center space-x-2"
         >
           {labelIcon ?? labelIcon}
           <span>{props.label}</span>
-          <Badge variant="destructive" className="text-xs px-2 py-0">
+          <Badge variant="outline" className="text-xs px-2 py-0">
             Required
           </Badge>
         </Label>

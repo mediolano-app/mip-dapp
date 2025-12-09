@@ -46,7 +46,7 @@ const footerSections = [
     title: "Resources",
     icon: Globe,
     links: [
-      { name: "Discover", href: "/discover", badge: "Learn" },
+      { name: "Explore", href: "/", badge: "Start" },
       { name: "Updates", href: "/news", badge: "News" },
       { name: "Mediolano", href: "https://mediolano.xyz", external: true },
       { name: "Mediolano Dapp", href: "https://ip.mediolano.app", external: true },

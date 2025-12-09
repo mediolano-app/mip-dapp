@@ -2,7 +2,7 @@
 
 import { Button } from "@/src/components/ui/button"
 import { Badge } from "@/src/components/ui/badge"
-import { Wallet, UserCheck, UserX, Sparkles } from "lucide-react"
+import { Wallet, UserCheck, UserX, Sparkles, LogIn, Zap } from "lucide-react"
 import { ThemeToggle } from "@/src/components/theme-toggle"
 import { NotificationsDropdown } from "@/src/components/notifications-dropdown"
 import Link from "next/link"
@@ -46,13 +46,13 @@ export function Header() {
             <SignedOut>
               <SignInButton>
                 <button className="text-sm px-2 py-1 rounded-full bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1 text-white p-1">
-                  <SiGoogle className="w-3 h-3" />
+                  <LogIn className="w-3 h-3" />
                   Log in
                 </button>
               </SignInButton>
               <SignUpButton>
                 <button className="text-sm px-2 py-1 rounded-full bg-purple-600 hover:bg-purple-700 transition-colors flex items-center gap-1 text-white p-1">
-                  <SiGoogle className="w-3 h-3" />
+                  <Zap className="w-3 h-3" />
                   Sign up
                 </button>
               </SignUpButton>

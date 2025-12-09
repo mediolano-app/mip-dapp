@@ -20,6 +20,7 @@ import {
   MoreHorizontal,
   Share,
   UserPlus,
+  Flag,
 } from "lucide-react"
 import type { AssetIP } from "@/src/types/asset"
 import Image from "next/image"
@@ -31,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu"
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
 
 interface ExpandableAssetCardProps {
   asset: AssetIP
@@ -117,7 +119,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                         {asset.licenseType.replace("-", " ").toUpperCase()}
                       </Badge>
                       <span className="text-xs text-muted-foreground">v{asset.ipVersion}</span>
-                      <span className="text-xs text-muted-foreground">by {asset.author}</span>
+                      <span className="text-xs text-muted-foreground"></span>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -178,6 +180,25 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                           <ExternalLink className="w-4 h-4 mr-2" />
                           View on Explorer
                         </DropdownMenuItem>
+                        {!isOwner && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <ReportContentDialog
+                              contentType="asset"
+                              contentId={asset.id}
+                              contentTitle={asset.title}
+                              contentOwner={asset.author}
+                            >
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Flag className="w-4 h-4 mr-2" />
+                                Report Content
+                              </DropdownMenuItem>
+                            </ReportContentDialog>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -295,7 +316,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                         rel="noopener noreferrer"
                         className="text-primary hover:underline text-sm"
                       >
-                        View External Resource
+                        View external link
                       </a>
                     </div>
                   </div>
@@ -361,6 +382,25 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                   <ExternalLink className="w-4 h-4 mr-2" />
                   View on Explorer
                 </DropdownMenuItem>
+                {!isOwner && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <ReportContentDialog
+                      contentType="asset"
+                      contentId={asset.id}
+                      contentTitle={asset.title}
+                      contentOwner={asset.author}
+                    >
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <Flag className="w-4 h-4 mr-2" />
+                        Report Content
+                      </DropdownMenuItem>
+                    </ReportContentDialog>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -399,8 +439,8 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>by {asset.author}</span>
               <span>{asset.registrationDate}</span>
+              <span></span>
             </div>
 
             <div className="flex space-x-2">

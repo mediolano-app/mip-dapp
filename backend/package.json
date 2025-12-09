@@ -1,0 +1,49 @@
+{
+  "name": "indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "apibara prepare",
+    "dev:dapp": "dotenv -e .env.dapp -- apibara dev --indexers medialano-dapp --preset=sepolia",
+    "dev:mipp:mainnet": "dotenv -e .env.mipp -- apibara dev --indexers medialano-mipp-mainnet --preset",
+    "api:dev": "dotenv -e .env tsx watch src/server.ts",
+    "build:indexer": "apibara build",
+    "build:api": "tsc --project tsconfig.api.json",
+    "build:deployment": "tsc --project tsconfig.deployment.json",
+    "start:indexer:dapp": "apibara start --indexer medialano-dapp --preset",
+    "start:indexer:mipp": "apibara start --indexer medialano-mipp-mainnet --preset",
+    "start:indexer:dapp:web": "node dist/deployment/deployment-service.js dapp",
+    "start:indexer:mipp:web": "node dist/deployment/deployment-service.js mipp",
+    "start:api:deploy": "pnpm run drizzle:generate && pnpm run drizzle:push && npx tsx dist/api/src/server.js",
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:migrate": "drizzle-kit migrate",
+    "drizzle:push": "drizzle-kit push",
+    "drizzle:studio": "drizzle-kit studio --port=3002",
+    "typecheck": "tsc --noEmit",
+    "typecheck:api": "tsc --project tsconfig.api.json --noEmit"
+  },
+  "dependencies": {
+    "@apibara/plugin-drizzle": "next",
+    "@apibara/protocol": "next",
+    "@apibara/starknet": "next",
+    "@electric-sql/pglite": "^0.2.17",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/swagger": "^9.5.1",
+    "@fastify/swagger-ui": "^5.2.3",
+    "apibara": "next",
+    "drizzle-kit": "^0.29.0",
+    "drizzle-orm": "^0.40.1",
+    "fastify": "^5.5.0",
+    "pg": "^8.13.1",
+    "starknet": "^7.6.4",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.2",
+    "@types/pg": "^8.11.10",
+    "dotenv-cli": "^10.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.6.2"
+  }
+}

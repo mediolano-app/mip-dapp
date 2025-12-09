@@ -7,7 +7,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { cairo } from "starknet";
 import {
-  Card,
+  Card, 
   CardContent,
   CardHeader,
   CardTitle,
@@ -45,7 +45,7 @@ import {
 import { toast } from "@/src/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useTransfer } from "@chipi-pay/chipi-sdk";
+import { useTransfer } from "@chipi-stack/nextjs";
 import { getWalletData } from "@/src/app/onboarding/_actions";
 import { useAuth, useUser } from "@clerk/nextjs";
 import {
@@ -53,7 +53,7 @@ import {
   useTransactionFeeEstimate,
 } from "@/src/hooks/use-wallet-assets";
 import { starknetService } from "@/src/services/starknet.service";
-import { useCallAnyContract } from "@chipi-pay/chipi-sdk";
+import { useCallAnyContract } from "@chipi-stack/nextjs";
 
 // Mediolano Protocol contract address (replace with actual contract)
 const MEDIOLANO_CONTRACT =

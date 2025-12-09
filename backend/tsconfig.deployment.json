@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist/deployment",
+    "rootDir": "src",
+    "declaration": true,
+    "sourceMap": true
+  },
+  "include": [
+    "src/deployment-service.ts"
+  ],
+  "exclude": [
+    "indexers/**/*",
+    "node_modules",
+    "dist"
+  ]
+}

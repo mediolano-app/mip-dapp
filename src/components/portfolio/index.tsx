@@ -138,9 +138,9 @@ export default function PortfolioView() {
   // Portfolio statistics
   const stats = {
     totalAssets: portfolioAssets?.length,
-    totalTokens: 0,
+    totalCollections: 1,
     totalValue: 0,
-    // totalTokens: tokens.length,
+    // totalCollections: tokens.length,
     // totalValue: walletAssets?.totalValueUSD || 0,
     uniqueCollections: new Set(
       portfolioAssets?.map((asset) => asset.collection)
@@ -270,11 +270,11 @@ export default function PortfolioView() {
                       {asset_loading ? (
                         <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                       ) : (
-                        stats.totalTokens
+                        stats.totalCollections
                       )}
                     </div>
                     <div className="text-xs text-purple-700 dark:text-purple-300">
-                      Tokens
+                      Collections
                     </div>
                   </CardContent>
                 </Card>
@@ -359,7 +359,7 @@ export default function PortfolioView() {
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="recent">Recent</SelectItem>
+                      <SelectItem value="recent">Created</SelectItem>
                       <SelectItem value="name">Name</SelectItem>
                       <SelectItem value="type">Type</SelectItem>
                       <SelectItem value="author">Author</SelectItem>

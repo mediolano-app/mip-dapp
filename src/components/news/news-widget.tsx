@@ -21,7 +21,7 @@ export function NewsWidget() {
             <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
               <Newspaper className="w-3 h-3 text-white" />
             </div>
-            <h4 className="font-bold">Featured</h4>
+            <h4 className="font-bold">Creators Newsroom</h4>
           </div>
           <Button variant="outline" size="sm" asChild className="hidden md:flex bg-transparent text-xs">
             <Link href="/news">
@@ -51,7 +51,7 @@ export function NewsWidget() {
                       <div className="flex items-start gap-2 mb-2">
                         <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 text-xs gap-1">
                           <Star className="w-2 h-2" />
-                          Hot
+                          Lastest
                         </Badge>
                         <Badge variant="secondary" className="text-xs">
                           {featuredArticle.category}

@@ -21,8 +21,18 @@ import {
   Activity,
   Zap,
   Target,
+  Flag,
+  MoreHorizontal,
 } from "lucide-react"
 import { VerifiedSocialBadges } from "@/src/components/verified-social-badges"
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu"
 import Image from "next/image"
 
 interface CreatorDashboardProps {
@@ -133,12 +143,47 @@ export function CreatorDashboard({ creator, assetCount }: CreatorDashboardProps)
               </div>
             </div>
 
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
-                <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                {isExpanded ? "Less" : "More"}
-              </Button>
-            </CollapsibleTrigger>
+            <div className="flex items-center space-x-2">
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                  {isExpanded ? "Less" : "More"}
+                </Button>
+              </CollapsibleTrigger>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Contact Creator
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View Portfolio
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <ReportContentDialog
+                    contentType="profile"
+                    contentId={creator.id || creator.username}
+                    contentTitle={creator.displayName || creator.username}
+                    contentOwner={creator.username}
+                  >
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Flag className="w-4 h-4 mr-2" />
+                      Report Profile
+                    </DropdownMenuItem>
+                  </ReportContentDialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Bio */}

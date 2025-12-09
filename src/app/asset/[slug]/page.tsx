@@ -17,6 +17,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { getLicenseColor, getProtectionIcon } from "@/src/lib/asset-display-utils"
 import { getExplorerUrlForToken } from "@/src/lib/explorer"
 
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
+
 
 export default function AssetPage() {
   const params = useParams()
@@ -24,6 +26,7 @@ export default function AssetPage() {
   const slug = params.slug as string
   const { asset, isLoading } = useAssetBySlug(slug)
   const [isOwner] = useState(false)
+
 
   const handleShare = () => {
     const url = window.location.href
@@ -94,12 +97,12 @@ export default function AssetPage() {
                       alt={asset.title}
                       width={600}
                       height={600}
-                      className="w-full aspect-square object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="w-full aspect-square object-cover transition-transform duration-700 group-hover:scale-102"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                     <div className="absolute top-4 left-4">
-                      <Badge className="bg-background/90 text-foreground border-border/50 backdrop-blur-sm">
+                      <Badge className="bg-background/60 text-foreground border-border/50 backdrop-blur-sm">
                         {asset.type || "NFT"}
                       </Badge>
                     </div>
@@ -219,10 +222,20 @@ export default function AssetPage() {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Flag className="w-4 h-4 mr-2" />
-                          Report
-                        </DropdownMenuItem>
+                        <ReportContentDialog
+                          contentType="asset"
+                          contentId={asset.slug}
+                          contentTitle={asset.title}
+                          contentOwner={asset.creator?.id}
+                        >
+                          <DropdownMenuItem 
+                            className="text-red-600 focus:text-red-600"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Flag className="w-4 h-4 mr-2" />
+                            Report Asset
+                          </DropdownMenuItem>
+                        </ReportContentDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -322,10 +335,10 @@ export default function AssetPage() {
             </div>
 
             <Tabs defaultValue="licensing" className="w-full">
-              <TabsList className="grid w-full grid-cols-5 bg-muted/50">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/50">
                 <TabsTrigger value="licensing" className="data-[state=active]:bg-background">Licensing</TabsTrigger>
                 <TabsTrigger value="template" className="data-[state=active]:bg-background">Template</TabsTrigger>
-                <TabsTrigger value="attributes" className="data-[state=active]:bg-background">Attributes</TabsTrigger>
+                {/*<TabsTrigger value="attributes" className="data-[state=active]:bg-background">Attributes</TabsTrigger>*/}
                 <TabsTrigger value="history" className="data-[state=active]:bg-background">History</TabsTrigger>
                 <TabsTrigger value="technical" className="data-[state=active]:bg-background">Technical</TabsTrigger>
               </TabsList>

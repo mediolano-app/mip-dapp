@@ -32,11 +32,9 @@ export function NewsHeader({
       <div className="space-y-4">
         <div className="inline-flex items-center space-x-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
           <Calendar className="w-4 h-4" />
-          <span>Latest News & Updates</span>
+          <span>Articles & Updates</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          News & Updates
-        </h1>
+        <h1 className="text-4xl sm:text-5xl font-extrabold">Creator Newsroom</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Stay informed about the latest developments in IP protection, platform updates, and creator success stories.
         </p>

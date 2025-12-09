@@ -1,11 +1,18 @@
-"use client"
+"use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react"
-import { Button } from "@/src/components/ui/button"
-import { Badge } from "@/src/components/ui/badge"
-import { Card, CardContent } from "@/src/components/ui/card"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/src/components/ui/collapsible"
-import { AssetFilterDrawer, type FilterState } from "@/src/components/asset-filter-drawer"
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
+import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/src/components/ui/collapsible";
+import {
+  TimelineFilterPopover,
+  type FilterState,
+} from "@/src/components/timeline-filter-popover";
 import {
   Share,
   MoreHorizontal,
@@ -26,32 +33,36 @@ import {
   Hash,
   Network,
   Award,
-} from "lucide-react"
-import { timelineAssets } from "@/src/lib/mock-data"
-import Image from "next/image"
-import Link from "next/link"
+  Flag,
+} from "lucide-react";
+import { useTimeline } from "@/src/hooks/use-timeline";
+import { toast } from "@/src/hooks/use-toast";
+import { shortenAddress } from "@/src/lib/utils";
+import Image from "next/image";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu"
+} from "@/src/components/ui/dropdown-menu";
+import { ReportContentDialog } from "@/src/components/report-content-dialog"
 
 const getLicenseColor = (licenseType: string) => {
   switch (licenseType) {
     case "all-rights":
-      return "bg-red-500 text-white"
+      return "bg-purple-500 text-white";
     case "creative-commons":
-      return "bg-green-500 text-white"
+      return "bg-green-500 text-white";
     case "open-source":
-      return "bg-blue-500 text-white"
+      return "bg-green-500 text-white";
     case "custom":
-      return "bg-purple-500 text-white"
+      return "bg-purple-500 text-white";
     default:
-      return "bg-gray-500 text-white"
+      return "bg-blue-500 text-white";
   }
-}
+};
 
 const defaultFilters: FilterState = {
   search: "",
@@ -62,212 +73,322 @@ const defaultFilters: FilterState = {
   sortBy: "recent",
   tags: [],
   priceRange: [0, 100],
-}
+};
 
-const ASSETS_PER_PAGE = 10
+const ASSETS_PER_PAGE = 20;
 
 export function Timeline() {
-  const [filters, setFilters] = useState<FilterState>(defaultFilters)
-  const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set())
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
+  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
 
-  const filteredAssets = useMemo(() => {
-    let filtered = [...timelineAssets]
 
-    // Search filter
-    if (filters.search) {
-      filtered = filtered.filter(
-        (asset) =>
-          asset.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-          asset.description.toLowerCase().includes(filters.search.toLowerCase()) ||
-          asset.creator.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-          asset.tags.toLowerCase().includes(filters.search.toLowerCase()),
-      )
+  const {
+    assets,
+    isLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    totalAssets,
+    updateFilters,
+    clearFilters: clearTimelineFilters,
+    activeFilters,
+  } = useTimeline({
+    initialLimit: ASSETS_PER_PAGE,
+    autoLoad: true,
+  });
+
+  // Filter optimization
+  const prevBackendFiltersRef = useRef<{ sortBy?: string }>({});
+  const updateFiltersRef = useRef(updateFilters);
+  updateFiltersRef.current = updateFilters;
+
+  useEffect(() => {
+    const currentBackendFilters = {
+      sortBy: (filters.sortBy === "recent"
+        ? "mintedAtBlock"
+        : filters.sortBy === "popular"
+        ? "mintedAtBlock"
+        : filters.sortBy === "trending"
+        ? "mintedAtBlock"
+        : filters.sortBy === "alphabetical"
+        ? "id"
+        : "mintedAtBlock") as "mintedAtBlock" | "id",
+    };
+
+    // Check if backend filters changed (only sort now, search is frontend)
+    const sortChanged =
+      prevBackendFiltersRef.current.sortBy !== currentBackendFilters.sortBy;
+
+    // Always update the filters in the timeline service
+    const timelineFilters = {
+      search: filters.search || undefined, // Now handled on frontend
+      sortBy: currentBackendFilters.sortBy,
+      sortOrder: "desc" as const,
+      assetTypes:
+        filters.assetTypes.length > 0 ? filters.assetTypes : undefined,
+      licenses: filters.licenses.length > 0 ? filters.licenses : undefined,
+      verifiedOnly: filters.verifiedOnly || undefined,
+      tags: filters.tags.length > 0 ? filters.tags : undefined,
+      dateRange: filters.dateRange !== "all" ? filters.dateRange : undefined,
+    };
+
+    if (sortChanged) {
+      prevBackendFiltersRef.current = currentBackendFilters;
+      updateFiltersRef.current(timelineFilters);
+    } else {
+      updateFiltersRef.current(timelineFilters);
     }
-
-    // Asset type filter
-    if (filters.assetTypes.length > 0) {
-      filtered = filtered.filter((asset) => filters.assetTypes.includes(asset.type.toLowerCase()))
-    }
-
-    // License filter
-    if (filters.licenses.length > 0) {
-      filtered = filtered.filter((asset) => {
-        const assetLicense = asset.licenseType.toLowerCase().replace(/\s+/g, "-")
-        return filters.licenses.some((license) => assetLicense.includes(license) || license.includes(assetLicense))
-      })
-    }
-
-    // Verified creators filter
-    if (filters.verifiedOnly) {
-      filtered = filtered.filter((asset) => asset.creator.verified)
-    }
-
-    // Tags filter
-    if (filters.tags.length > 0) {
-      filtered = filtered.filter((asset) =>
-        filters.tags.some((tag) => asset.tags.toLowerCase().includes(tag.toLowerCase())),
-      )
-    }
-
-    // Sort
-    switch (filters.sortBy) {
-      case "alphabetical":
-        filtered.sort((a, b) => a.title.localeCompare(b.title))
-        break
-      case "popular":
-        filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        break
-      case "trending":
-        filtered.sort((a, b) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime())
-        break
-      default:
-        break
-    }
-
-    return filtered
-  }, [filters])
-
-  const paginatedAssets = useMemo(() => {
-    return filteredAssets.slice(0, currentPage * ASSETS_PER_PAGE)
-  }, [filteredAssets, currentPage])
+  }, [filters]);
 
   const activeFilterCount = useMemo(() => {
-    return [
-      filters.search && 1,
-      filters.assetTypes.length,
-      filters.licenses.length,
-      filters.verifiedOnly && 1,
-      filters.dateRange !== "all" && 1,
-      filters.sortBy !== "recent" && 1,
-      filters.tags.length,
-    ]
-      .filter(Boolean)
-      .reduce((a, b) => (a as number) + (b as number), 0)
-  }, [filters])
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.assetTypes.length > 0) count += filters.assetTypes.length;
+    if (filters.licenses.length > 0) count += filters.licenses.length;
+    if (filters.verifiedOnly) count++;
+    if (filters.dateRange !== "all") count++;
+    if (filters.sortBy !== "recent") count++;
+    if (filters.tags.length > 0) count += filters.tags.length;
+    return count;
+  }, [filters]);
 
-  const loadMore = useCallback(async () => {
-    if (isLoading || !hasMore) return
+  // Infinite scroll trigger element
+  const scrollTriggerRef = useRef<HTMLDivElement>(null);
 
-    setIsLoading(true)
-
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const nextPage = currentPage + 1
-    const totalAvailable = filteredAssets.length
-    const nextPageAssets = totalAvailable - currentPage * ASSETS_PER_PAGE
-
-    if (nextPageAssets <= 0) {
-      setHasMore(false)
-    } else {
-      setCurrentPage(nextPage)
-    }
-
-    setIsLoading(false)
-  }, [currentPage, filteredAssets.length, isLoading, hasMore])
-
-  // Infinite scroll
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-        loadMore()
-      }
-    }
+    const element = scrollTriggerRef.current;
+    if (!element) return;
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [loadMore])
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-    setHasMore(true)
-  }, [filters])
+    element.setAttribute("data-timeline-scroll-trigger", "true");
+  }, []);
 
   const clearFilters = () => {
-    setFilters(defaultFilters)
-  }
+    setFilters(defaultFilters);
+    clearTimelineFilters();
+  };
 
   const removeFilter = (type: string, value?: string) => {
     switch (type) {
       case "search":
-        setFilters((prev) => ({ ...prev, search: "" }))
-        break
+        setFilters((prev) => ({ ...prev, search: "" }));
+        break;
       case "assetType":
         setFilters((prev) => ({
           ...prev,
           assetTypes: prev.assetTypes.filter((t) => t !== value),
-        }))
-        break
+        }));
+        break;
       case "license":
         setFilters((prev) => ({
           ...prev,
           licenses: prev.licenses.filter((l) => l !== value),
-        }))
-        break
+        }));
+        break;
       case "verified":
-        setFilters((prev) => ({ ...prev, verifiedOnly: false }))
-        break
+        setFilters((prev) => ({ ...prev, verifiedOnly: false }));
+        break;
       case "tag":
         setFilters((prev) => ({
           ...prev,
           tags: prev.tags.filter((t) => t !== value),
-        }))
-        break
+        }));
+        break;
     }
-  }
+  };
 
   const toggleExpanded = (assetId: string) => {
     setExpandedAssets((prev) => {
-      const newSet = new Set(prev)
+      const newSet = new Set(prev);
       if (newSet.has(assetId)) {
-        newSet.delete(assetId)
+        newSet.delete(assetId);
       } else {
-        newSet.add(assetId)
+        newSet.add(assetId);
       }
-      return newSet
-    })
-  }
+      return newSet;
+    });
+  };
 
-  const handleShare = (asset: any) => {
-    const url = `${window.location.origin}/asset/${asset.slug}`
-    navigator.clipboard.writeText(url)
-  }
+  const handleShare = async (asset: any) => {
+    try {
+      const url = `${window.location.origin}/asset/${asset.slug}`;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied!",
+        description: "You can share it anywhere.",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: `Please copy this link manually: ${window.location.origin}/asset/${asset.slug}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
-     
-     
-      {/* Header */}
-      <div className="text-center space-y-4">
-        
+      
+      
+      {/* Filter Controls */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <TimelineFilterPopover
+            filters={filters}
+            onFiltersChange={setFilters}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={clearFilters}
+          />
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {filters.search && (
+                <Badge variant="secondary" className="text-xs">
+                  Search: {filters.search}
+                  <X
+                    className="w-3 h-3 ml-1 cursor-pointer"
+                    onClick={() => removeFilter("search")}
+                  />
+                </Badge>
+              )}
+              {filters.assetTypes.map((type) => (
+                <Badge key={type} variant="secondary" className="text-xs">
+                  {type}
+                  <X
+                    className="w-3 h-3 ml-1 cursor-pointer"
+                    onClick={() => removeFilter("assetType", type)}
+                  />
+                </Badge>
+              ))}
+              {filters.licenses.map((license) => (
+                <Badge key={license} variant="secondary" className="text-xs">
+                  {license}
+                  <X
+                    className="w-3 h-3 ml-1 cursor-pointer"
+                    onClick={() => removeFilter("license", license)}
+                  />
+                </Badge>
+              ))}
+              {filters.verifiedOnly && (
+                <Badge variant="secondary" className="text-xs">
+                  Verified Only
+                  <X
+                    className="w-3 h-3 ml-1 cursor-pointer"
+                    onClick={() => removeFilter("verified")}
+                  />
+                </Badge>
+              )}
+              {filters.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  #{tag}
+                  <X
+                    className="w-3 h-3 ml-1 cursor-pointer"
+                    onClick={() => removeFilter("tag", tag)}
+                  />
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        {activeFilterCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            Clear all
+          </Button>
+        )}
       </div>
-     
 
-      {/* Timeline Feed */}
-      {filteredAssets.length === 0 ? (
+      {/* Error State */}
+      {error && (
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Failed to load timeline
+          </h3>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            <Sparkles className="w-4 h-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      )}
+
+      {/* Initial loading skeletons */}
+      {isLoading && assets.length === 0 && (
+        <div className="max-w-2xl mx-auto space-y-6">
+          {[...Array(5)].map((_, i) => (
+            <Card
+              key={`initial-skeleton-${i}`}
+              className="overflow-hidden border-border/50 bg-card"
+            >
+              <div className="animate-pulse">
+                <div className="h-64 bg-muted"></div>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-8 h-8 bg-muted rounded-full"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-muted rounded w-32 mb-2"></div>
+                      <div className="h-3 bg-muted rounded w-20"></div>
+                    </div>
+                  </div>
+                  <div className="h-6 bg-muted rounded w-3/4 mb-3"></div>
+                  <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-2/3 mb-4"></div>
+                  <div className="flex gap-2">
+                    <div className="h-6 bg-muted rounded w-16"></div>
+                    <div className="h-6 bg-muted rounded w-20"></div>
+                    <div className="h-6 bg-muted rounded w-14"></div>
+                  </div>
+                </CardContent>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!error && !isLoading && assets.length === 0 && (
         <div className="text-center py-16">
           <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ExternalLink className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">No assets found</h3>
-          <p className="text-muted-foreground mb-6">Try adjusting your filters to discover more IP assets</p>
-          <Button onClick={clearFilters} variant="outline">
-            <Sparkles className="w-4 h-4 mr-2" />
-            Explore All Assets
-          </Button>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            No assets found
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            {activeFilterCount > 0
+              ? "Try adjusting your filters to discover more IP assets"
+              : "Be the first to tokenize your IP assets on the Mediolano Protocol"}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {activeFilterCount > 0 ? (
+              <Button onClick={clearFilters} variant="outline">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Clear Filters
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href="/create">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Create Your First IP Asset
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
-      ) : (
+      )}
+
+      {/* Timeline Feed */}
+      {!error && assets.length > 0 && (
         <div className="max-w-2xl mx-auto space-y-6">
-          {paginatedAssets.map((asset, index) => (
+          {assets.map((asset, index: number) => (
             <Card
               key={asset.id}
               className="overflow-hidden border-border/50 bg-card hover:shadow-lg transition-all duration-300 group"
             >
-              <Collapsible open={expandedAssets.has(asset.id)} onOpenChange={() => toggleExpanded(asset.id)}>
+              <Collapsible
+                open={expandedAssets.has(asset.id)}
+                onOpenChange={() => toggleExpanded(asset.id)}
+              >
                 {/* Asset Media - Top */}
                 <Link href={`/asset/${asset.slug}`}>
                   <div className="relative">
@@ -279,7 +400,11 @@ export function Timeline() {
                       className="w-full h-64 object-cover cursor-pointer"
                     />
                     <div className="absolute top-3 right-3">
-                      <Badge className={`${getLicenseColor(asset.licenseType)} text-xs`}>
+                      <Badge
+                        className={`${getLicenseColor(
+                          asset.licenseType
+                        )} text-xs`}
+                      >
                         {asset.licenseType.replace("-", " ").toUpperCase()}
                       </Badge>
                     </div>
@@ -295,7 +420,9 @@ export function Timeline() {
                         {asset.title}
                       </h2>
                     </Link>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{asset.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {asset.description}
+                    </p>
                   </div>
 
                   {/* Type & Author */}
@@ -307,53 +434,75 @@ export function Timeline() {
                           alt={asset.creator.name}
                           width={32}
                           height={32}
-                          className="w-8 h-8 rounded-full object-cover ring-2 ring-border/50"
+                          className="min-w-8 min-h-8 w-8 h-8 rounded-full object-cover ring-2 ring-border/50"
                         />
                       </Link>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <Link
+                          {
+                            typeof asset.creator.name === "string" && asset.creator.name.startsWith("0x") && asset.creator.name.length > 16
+                              ? shortenAddress(asset.creator.name, 6)
+                              : asset.creator.name
+                          }
+                          {/* <Link
                             href={`/creator/${asset.creator.username}`}
                             className="font-medium text-sm text-foreground hover:text-primary transition-colors"
                           >
                             {asset.creator.name}
-                          </Link>
-                          {asset.creator.verified && <Shield className="w-3 h-3 text-blue-500" />}
+                          </Link> */}
+                          {asset.creator.verified && (
+                            <Shield className="ml-1 w-3 h-3 text-blue-500" />
+                          )}
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs text-muted-foreground">{asset.timestamp}</span>
-                          <Badge variant="outline" className="text-xs capitalize">
+                          <span className="text-xs text-muted-foreground">
+                            {asset.timestamp}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="text-xs capitalize"
+                          >
                             {asset.type}
                           </Badge>
-                          
                         </div>
                       </div>
                     </div>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                        >
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleShare(asset)}>
+
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => handleShare(asset)}>
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Send className="w-4 h-4 mr-2" />
-                          License Asset
-                        </DropdownMenuItem>
+                       
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          View on Explorer
-                        </DropdownMenuItem>
+
+                        <ReportContentDialog
+                          contentType="asset"
+                          contentId={asset.id}
+                          contentTitle={asset.title}
+                          contentOwner={asset.author}
+                          contentImage={asset.mediaUrl}
+                        >
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive cursor-pointer"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Flag className="w-4 h-4 mr-2" />
+                            Report Asset
+                          </DropdownMenuItem>
+                        </ReportContentDialog>
+
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -361,7 +510,6 @@ export function Timeline() {
                   {/* Actions */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      
                       <Button
                         variant="ghost"
                         size="sm"
@@ -372,28 +520,34 @@ export function Timeline() {
                         Share
                       </Button>
 
-
-                  
-
-                      {asset.externalUrl && (
+                      {/*asset.externalUrl && (
                         <Button
                           variant="ghost"
                           size="sm"
                           asChild
                           className="text-muted-foreground hover:text-foreground"
                         >
-                          <a href={asset.externalUrl} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={asset.externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             <Globe className="w-4 h-4 mr-1" />
-                            External
+                            External link
                           </a>
                         </Button>
-                      )}
+                      )*/}
+
+
                     </div>
 
                     <div className="flex items-center space-x-2">
-
                       <Link href={`/asset/${asset.slug}`}>
-                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
                           <Eye className="w-4 h-4 mr-1" />
                           View
                         </Button>
@@ -402,7 +556,9 @@ export function Timeline() {
                       <CollapsibleTrigger asChild>
                         <Button variant="outline" size="sm">
                           <ChevronDown
-                            className={`w-4 h-4 transition-transform ${expandedAssets.has(asset.id) ? "rotate-180" : ""}`}
+                            className={`w-4 h-4 transition-transform ${
+                              expandedAssets.has(asset.id) ? "rotate-180" : ""
+                            }`}
                           />
                         </Button>
                       </CollapsibleTrigger>
@@ -431,8 +587,12 @@ export function Timeline() {
                               className="w-6 h-6 rounded-full object-cover"
                             />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{asset.creator.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">@{asset.creator.username}</p>
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {asset.creator.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {asset.creator.username}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -446,8 +606,10 @@ export function Timeline() {
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-foreground">{asset.protectionStatus}</p>
-                            <p className="text-xs text-muted-foreground">v{asset.ipVersion}</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {asset.protectionStatus} v{asset.ipVersion}
+                            </p>
+
                           </div>
                         </div>
 
@@ -460,8 +622,12 @@ export function Timeline() {
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-foreground">{asset.blockchain}</p>
-                            <p className="text-xs text-muted-foreground font-mono">#{asset.tokenId || asset.id}</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {asset.blockchain}
+                            </p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              #{asset.tokenId || asset.id}
+                            </p>
                           </div>
                         </div>
 
@@ -474,8 +640,12 @@ export function Timeline() {
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-foreground">{asset.registrationDate}</p>
-                            <p className="text-xs text-muted-foreground">{asset.protectionDuration}</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {asset.registrationDate}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {asset.protectionDuration}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -497,7 +667,9 @@ export function Timeline() {
                                 <XCircle className="w-4 h-4 text-red-500" />
                               )}
                             </div>
-                            <p className="text-xs font-medium text-foreground">Commercial</p>
+                            <p className="text-xs font-medium text-foreground">
+                              Commercial
+                            </p>
                           </div>
                           <div className="text-center">
                             <div className="flex justify-center mb-1">
@@ -507,7 +679,9 @@ export function Timeline() {
                                 <XCircle className="w-4 h-4 text-red-500" />
                               )}
                             </div>
-                            <p className="text-xs font-medium text-foreground">Modify</p>
+                            <p className="text-xs font-medium text-foreground">
+                              Modify
+                            </p>
                           </div>
                           <div className="text-center">
                             <div className="flex justify-center mb-1">
@@ -517,7 +691,9 @@ export function Timeline() {
                                 <XCircle className="w-4 h-4 text-red-500" />
                               )}
                             </div>
-                            <p className="text-xs font-medium text-foreground">Attribution</p>
+                            <p className="text-xs font-medium text-foreground">
+                              Attribution
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -531,11 +707,19 @@ export function Timeline() {
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {asset.tags.split(", ").map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs px-2 py-0.5">
-                              {tag}
-                            </Badge>
-                          ))}
+                          {asset.tags && asset.tags.trim() ? (
+                            asset.tags.split(", ").map((tag: string) => (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="text-xs px-2 py-0.5"
+                              >
+                                {tag}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">No tags</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -545,24 +729,55 @@ export function Timeline() {
             </Card>
           ))}
 
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex justify-center py-8">
-              <div className="flex items-center space-x-2 text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Loading more assets...</span>
-              </div>
+          {/* Loading skeletons for more assets */}
+          {isLoadingMore && (
+            <div className="space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <Card
+                  key={`skeleton-${i}`}
+                  className="overflow-hidden border-border/50 bg-card"
+                >
+                  <div className="animate-pulse">
+                    <div className="h-64 bg-muted"></div>
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-8 h-8 bg-muted rounded-full"></div>
+                        <div className="flex-1">
+                          <div className="h-4 bg-muted rounded w-32 mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-20"></div>
+                        </div>
+                      </div>
+                      <div className="h-6 bg-muted rounded w-3/4 mb-3"></div>
+                      <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                      <div className="h-4 bg-muted rounded w-2/3"></div>
+                    </CardContent>
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
 
+          {/* Infinite scroll trigger */}
+          <div ref={scrollTriggerRef} className="h-1" />
+
           {/* End of results */}
-          {!hasMore && paginatedAssets.length > 0 && (
+          {!hasMore && assets.length > 0 && (
             <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">That's all for today</p>
+              <p className="text-sm text-muted-foreground">
+                (for now) you've reached the end of this timline • {totalAssets} assets loaded
+              </p>
+              <Link href="/create">
+                <Button variant="outline" size="sm" className="mt-4">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Create New
+                </Button>
+              </Link>
             </div>
           )}
         </div>
       )}
+
+
     </div>
-  )
+  );
 }

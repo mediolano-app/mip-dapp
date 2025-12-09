@@ -4,13 +4,14 @@ import * as React from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useCreateWallet } from "@chipi-pay/chipi-sdk";
+import { useCreateWallet } from "@chipi-stack/nextjs";
 import { completeOnboarding } from "./_actions";
 
 export default function OnboardingComponent() {
   // Access the current user's data
   const { user } = useUser();
   const router = useRouter();
+
   const { createWalletAsync, isLoading, isError } = useCreateWallet();
   const { getToken } = useAuth();
 
@@ -35,6 +36,9 @@ export default function OnboardingComponent() {
     }
     return '';
   };
+
+
+
 
   // Handle PIN input change for real-time validation
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,16 +74,21 @@ export default function OnboardingComponent() {
       }
 
       const response = await createWalletAsync({
-        encryptKey: pin,
+        params:{ 
+          encryptKey: pin,
+          externalUserId:  user?.id as any,
+        },
         bearerToken: token,
       });
+      
       console.log('Wallet creation response:', response);
 
-      if (!response.success || !response.wallet) {
+      if (!response.txHash || !response.wallet) {
         throw new Error('Failed to create wallet');
       }
 
       console.log('Updating Clerk metadata...');
+
       const result = await completeOnboarding({
         publicKey: response.wallet.publicKey,
         encryptedPrivateKey: response.wallet.encryptedPrivateKey,

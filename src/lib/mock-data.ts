@@ -15,7 +15,7 @@ export const creators: Creator[] = [
     collections: 3,
     followers: 1250,
     following: 340,
-    wallet: "0x1111111111111111111111111111111111111111",
+    wallet: "0x19eefbfa551b6d772d4084946fedd4037c0935968a74d60d54e11ffdaa4d99c",
   },
   {
     id: "2",

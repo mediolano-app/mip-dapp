@@ -17,7 +17,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { CollectionPreviewDrawer } from "@/src/components/collection-preview-drawer"
-import { useCallAnyContract } from "@chipi-pay/chipi-sdk"
+import { useCallAnyContract } from "@chipi-stack/nextjs"
 import { getWalletData } from "@/src/app/onboarding/_actions"
 import { toast } from "@/src/hooks/use-toast"
 import { useAuth } from "@clerk/nextjs"
@@ -60,7 +60,7 @@ export default function CreateCollectionPage() {
   }
 
   // Chipi SDK hooks
-  const { callAnyContractAsync, callAnyContractData, isLoading: isDeploying, isError: deployError } = useCallAnyContract()
+  const { callAnyContractAsync, isLoading: isDeploying, isError: deployError } = useCallAnyContract()
 
   // Form state
   const [formData, setFormData] = useState<CollectionFormData>({
@@ -353,18 +353,20 @@ export default function CreateCollectionPage() {
       }
 
       // Create collection using Chipi SDK
-      const contractCall = {
+      
+      const result = await callAnyContractAsync({
+        params:{
         encryptKey: pin,
-        bearerToken: token,
         wallet: {
           publicKey: walletData.publicKey,
           encryptedPrivateKey: walletData.encryptedPrivateKey
         },
         contractAddress: COLLECTION_FACTORY_ADDRESS,
         calls: [call]
-      }
 
-      const result = await callAnyContractAsync(contractCall)
+        },
+        bearerToken: token,
+      })
       
       // Step 4: Finalizing
       setCurrentStep(3)
