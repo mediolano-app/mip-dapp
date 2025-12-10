@@ -74,7 +74,6 @@ export default function TransferPage() {
   // Chipi SDK hooks
   const {
     transferAsync,
-    transferData,
     isLoading: isTransferLoading,
   } = useTransfer();
 
@@ -289,25 +288,29 @@ export default function TransferPage() {
         throw new Error("Selected asset does not have a token ID");
       }
 
+      const tokenId = selectedAssetData.tokenId.toString();
+
       const transferResult = await callAnyContractAsync({
-        encryptKey: pin,
-        bearerToken: token,
-        wallet: {
-          publicKey: walletData.publicKey,
-          encryptedPrivateKey: walletData.encryptedPrivateKey,
-        },
-        contractAddress: MEDIOLANO_CONTRACT,
-        calls: [
-          {
-            contractAddress: MEDIOLANO_CONTRACT,
-            entrypoint: "transfer_from",
-            calldata: [
-              walletData.publicKey,
-              recipientAddress,
-              cairo.uint256(selectedAssetData.tokenId),
-            ],
+        params: {
+          encryptKey: pin,
+          wallet: {
+            publicKey: walletData.publicKey,
+            encryptedPrivateKey: walletData.encryptedPrivateKey,
           },
-        ],
+          contractAddress: MEDIOLANO_CONTRACT,
+          calls: [
+            {
+              contractAddress: MEDIOLANO_CONTRACT,
+              entrypoint: "transfer_from",
+              calldata: [
+                walletData.publicKey,
+                recipientAddress,
+                cairo.uint256(tokenId),
+              ],
+            },
+          ],
+        },
+        bearerToken: token,
       });
 
       console.log("Transfer initiated successfully", transferResult);
