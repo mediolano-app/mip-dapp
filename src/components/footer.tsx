@@ -31,26 +31,25 @@ import { SiGithub, SiX } from "react-icons/si"
 const footerSections = [
   {
     id: "platform",
-    title: "Start",
+    title: "My Intellectual Property",
     icon: Shield,
     links: [
-      { name: "Create", href: "/create", badge: "Free" },
-      { name: "Portfolio", href: "/portfolio" },
-      { name: "Transfer", href: "/transfer" },
-      { name: "Activities", href: "/activities" },
-      { name: "Notifications", href: "/notifications" },
+      { name: "Explore", href: "/", badge: "Start", external: false },
+      { name: "Create", href: "/create", badge: "Free", external: false },
+      { name: "Portfolio", href: "/portfolio", external: false },
+      { name: "Activities", href: "/activities", external: false },
     ],
   },
   {
     id: "resources",
-    title: "Resources",
+    title: "Explore",
     icon: Globe,
     links: [
-      { name: "Explore", href: "/", badge: "Start" },
-      { name: "Updates", href: "/news", badge: "News" },
+      
+      { name: "Android App", href: "https://play.google.com/store/apps/details?id=com.mip.mediolano.app", external: true },
       { name: "Mediolano", href: "https://mediolano.xyz", external: true },
-      { name: "Mediolano Dapp", href: "https://ip.mediolano.app", external: true },
-      { name: "Contact Us", href: "mailto:mediolanoapp@gmail.com" },
+      { name: "IP Creator", href: "https://ip.mediolano.app", external: true },
+      { name: "Contact Us", href: "mailto:mediolanoapp@gmail.com", external: false },
     ],
   },
   {
@@ -58,11 +57,11 @@ const footerSections = [
     title: "Support",
     icon: FileCheck,
     links: [
-      { name: "Community Guidelines", href: "https://mediolano.xyz/community-guidelines/" },
-      { name: "Governance Charter", href: "https://mediolano.xyz/governance-charter/" },
-       { name: "Compliance Guidelines", href: "https://mediolano.xyz/compliance-guidelines/" },
-       { name: "Terms of Use", href: "https://mediolano.xyz/terms-of-use/" },
-      { name: "Privacy Policy", href: "https://mediolano.xyz/privacy-policy/" },
+      { name: "Community Guidelines", href: "https://mediolano.xyz/community-guidelines/", external: true },
+      { name: "Governance Charter", href: "https://mediolano.xyz/governance-charter/", external: true },
+       { name: "Compliance Guidelines", href: "https://mediolano.xyz/compliance-guidelines/", external: true },
+       { name: "Terms of Use", href: "https://mediolano.xyz/terms-of-use/", external: true },
+      { name: "Privacy Policy", href: "https://mediolano.xyz/privacy-policy/", external: true },
 
     ],
   },
@@ -216,8 +215,8 @@ export function Footer() {
 
 
 
-            {/* News Widget */}
-      <NewsWidget />
+      {/* News Widget 
+      <NewsWidget />*/}
 
 
 
