@@ -54,35 +54,10 @@ export const assetTypes = [
 
 export const collections = [
   {
-    value: "mip-collection",
-    label: "MIP Collection",
-    description: "Default MIP collection",
-  },
-  {
-    value: "art-gallery",
-    label: "Art Gallery",
-    description: "Curated art collection",
-  },
-  {
-    value: "music-vault",
-    label: "Music Vault",
-    description: "Audio collection",
-  },
-  {
-    value: "digital-assets",
-    label: "Digital Assets",
-    description: "Mixed media collection",
-  },
-  {
-    value: "exclusive-drops",
-    label: "Exclusive Drops",
-    description: "Limited releases",
-  },
-  {
-    value: "community-picks",
-    label: "Community Picks",
-    description: "Community favorites",
-  },
+    value: "my-intellectual-property",
+    label: "My Intellectual Property",
+    description: "Default collection for all IP assets",
+  }
 ];
 
 export const quickTags = [

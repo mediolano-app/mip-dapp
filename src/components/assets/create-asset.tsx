@@ -602,6 +602,7 @@ export default function CreateAssetView() {
                                     </p>
                                   </div>
                                   <Switch
+                                    checked={values.commercialUse}
                                     onCheckedChange={(val) =>
                                       setFieldValue("commercialUse", val)
                                     }
@@ -618,6 +619,7 @@ export default function CreateAssetView() {
                                     </p>
                                   </div>
                                   <Switch
+                                    checked={values.modifications}
                                     name="modifications"
                                     onCheckedChange={(val) =>
                                       setFieldValue("modifications", val)
@@ -634,6 +636,7 @@ export default function CreateAssetView() {
                                     </p>
                                   </div>
                                   <Switch
+                                    checked={values.attribution}
                                     onCheckedChange={(val) =>
                                       setFieldValue("attribution", val)
                                     }
