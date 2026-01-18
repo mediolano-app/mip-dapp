@@ -180,19 +180,24 @@ export class StarkNetService {
             this.withRetry(async () => {
               const tokenIndex = uint256.bnToUint256(BigInt(i));
 
-              const tokenIdBigInt = await contract.token_of_owner_by_index(
+              const tokenIdBigInt = await contract.call("tokenOfOwnerByIndex", [
                 walletAddress,
-                tokenIndex
-              );
-              const tokenId = tokenIdBigInt.toString();
+                tokenIndex,
+              ], { blockIdentifier: "latest" });
+              const tokenId = Array.isArray(tokenIdBigInt) 
+                ? tokenIdBigInt[0]?.toString() 
+                : tokenIdBigInt?.toString();
+              
+              if (!tokenId) return null;
+              
               let tokenURI: string | undefined;
               let metadata: any = undefined;
 
               try {
-                const uriResult = await contract.tokenURI(BigInt(tokenId));
+                const uriResult = await contract.call("tokenURI", [tokenId], { blockIdentifier: "latest" });
                 tokenURI = Array.isArray(uriResult)
                   ? this.feltArrayToString(uriResult)
-                  : uriResult.toString();
+                  : uriResult?.toString?.();
 
                 if (
                   tokenURI?.startsWith("http") ||
