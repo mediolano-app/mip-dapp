@@ -244,18 +244,35 @@ export function Activities({
             {/* Error State */}
             {error && !loading && (
               <div className="animate-fade-in-up" style={{ animationDelay: "500ms" }}>
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-full mb-4">
-                    <X className="w-8 h-8 text-red-500" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Activities</h3>
-                  <p className="text-muted-foreground mb-4">{error}</p>
-                  {onRefresh && (
-                    <Button onClick={onRefresh} variant="outline">
-                      Try Again
-                    </Button>
-                  )}
-                </div>
+                <Card className="border-red-500/20 bg-red-500/5">
+                  <CardContent className="p-6">
+                    <div className="text-center py-6">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-full mb-4">
+                        <X className="w-8 h-8 text-red-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Unable to Load Activities</h3>
+                      <p className="text-muted-foreground mb-4 max-w-md mx-auto">{error}</p>
+                      
+                      {error.includes('backend API') && (
+                        <div className="bg-white/50 dark:bg-slate-900/50 rounded-lg p-4 text-left mb-4 border border-orange-200 dark:border-orange-900">
+                          <p className="text-sm font-semibold text-foreground mb-2">📋 To fix this:</p>
+                          <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                            <li>Open a terminal in the <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs">backend/</code> folder</li>
+                            <li>Run: <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs font-mono">pnpm run api:dev</code></li>
+                            <li>Backend will start at <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs">http://localhost:3000</code></li>
+                            <li>Refresh this page to load activities</li>
+                          </ol>
+                        </div>
+                      )}
+                      
+                      {onRefresh && (
+                        <Button onClick={onRefresh} variant="outline">
+                          Try Again
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 

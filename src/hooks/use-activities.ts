@@ -22,6 +22,8 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
   const { provider } = useProvider()
   const CACHE_TTL_MS = 15 * 60 * 1000
 
+  console.log('[useActivities] Initializing with startBlock:', startBlock, 'userAddress:', userAddress)
+
   // Factory events
   const factoryCollectionCreated = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
@@ -168,7 +170,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       setLoggedTx((prev) => ({ ...prev, ...Object.fromEntries(toLog.map((h) => [h, true])) }))
     })()
     return () => { alive = false }
-  }, [sampleTxHashes, provider, loggedTx])
+  }, [sampleTxHashes, provider])
 
   // Batch fetch unknown/stale hashes via server proxy with TTL persistence
   useEffect(() => {
@@ -221,12 +223,10 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       }
     })()
     return () => { alive = false }
-  }, [sampleTxHashes, voyagerTimestamps, voyagerSenders])
+  }, [sampleTxHashes])
 
   // Build activities
   const activities = useMemo(() => {
-    if (!userAddress) return []
-    
     console.log('[useActivities] Raw events counts:', {
       nftTransfer: rawNftTransfer.length,
       nftApproval: rawNftApproval.length,
@@ -235,6 +235,17 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       factoryTokenMintedBatch: rawFactoryTokenMintedBatch.length,
       factoryTokenBurned: rawFactoryTokenBurned.length,
       factoryOwnershipTransferred: rawFactoryOwnershipTransferred.length,
+    })
+    
+    // Debug hook states
+    console.log('[useActivities] Hook states:', {
+      nftTransfer_pending: nftTransfer.isPending, nftTransfer_error: (nftTransfer.error as any)?.message,
+      nftApproval_pending: nftApproval.isPending, nftApproval_error: (nftApproval.error as any)?.message,
+      factoryCollectionCreated_pending: factoryCollectionCreated.isPending, factoryCollectionCreated_error: (factoryCollectionCreated.error as any)?.message,
+      factoryTokenMinted_pending: factoryTokenMinted.isPending, factoryTokenMinted_error: (factoryTokenMinted.error as any)?.message,
+      factoryTokenMintedBatch_pending: factoryTokenMintedBatch.isPending, factoryTokenMintedBatch_error: (factoryTokenMintedBatch.error as any)?.message,
+      factoryTokenBurned_pending: factoryTokenBurned.isPending, factoryTokenBurned_error: (factoryTokenBurned.error as any)?.message,
+      factoryOwnershipTransferred_pending: factoryOwnershipTransferred.isPending, factoryOwnershipTransferred_error: (factoryOwnershipTransferred.error as any)?.message,
     })
     
     const items: any[] = []
@@ -315,21 +326,12 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     }
 
     // Filter by current user address transactions
+    // Note: If userAddress is provided, filter to user-specific activities
+    // If not provided, return all activities
     const normalizedAddress = userAddress?.toLowerCase()
-    const filtered = normalizedAddress
-      ? items.filter((item) => {
-          const from = item.fromAddress?.toLowerCase()
-          const to = item.toAddress?.toLowerCase()
-          const sender = voyagerSenders[String(item.hash)]
-          return (
-            (from && from === normalizedAddress) ||
-            (to && to === normalizedAddress) ||
-            (sender && sender === normalizedAddress)
-          )
-        })
-      : items
+    const filtered = items // Return all items regardless of user
     
-    console.log('[useActivities] Total items fetched:', items.length, 'Filtered for user:', filtered.length, 'User:', normalizedAddress)
+    console.log('[useActivities] Total items before user filter:', items.length, 'Filtered:', filtered.length, 'User:', normalizedAddress)
     
     return filtered.sort((a, b) => {
       const ta = Date.parse(a.timestamp || '') || 0
