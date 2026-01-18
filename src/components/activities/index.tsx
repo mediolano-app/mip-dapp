@@ -253,15 +253,15 @@ export function Activities({
                       <h3 className="text-lg font-semibold text-foreground mb-2">Unable to Load Activities</h3>
                       <p className="text-muted-foreground mb-4 max-w-md mx-auto">{error}</p>
                       
-                      {error.includes('backend API') && (
+                      {error.includes('contract') && (
                         <div className="bg-white/50 dark:bg-slate-900/50 rounded-lg p-4 text-left mb-4 border border-orange-200 dark:border-orange-900">
-                          <p className="text-sm font-semibold text-foreground mb-2">📋 To fix this:</p>
-                          <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                            <li>Open a terminal in the <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs">backend/</code> folder</li>
-                            <li>Run: <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs font-mono">pnpm run api:dev</code></li>
-                            <li>Backend will start at <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs">http://localhost:3000</code></li>
-                            <li>Refresh this page to load activities</li>
-                          </ol>
+                          <p className="text-sm font-semibold text-foreground mb-2">💡 Troubleshooting:</p>
+                          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                            <li>Check if the RPC endpoint is working</li>
+                            <li>Verify contract address is correct</li>
+                            <li>Make sure there are Transfer events on the contract</li>
+                            <li>Try refreshing the page</li>
+                          </ul>
                         </div>
                       )}
                       

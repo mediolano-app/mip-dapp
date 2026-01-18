@@ -5,7 +5,7 @@ import { toast } from "@/src/hooks/use-toast"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getWalletData } from "@/src/app/onboarding/_actions"
-import { useActivitiesV2 } from "@/src/hooks/use-activities-v2"
+import { useActivitiesOnchain } from "@/src/hooks/use-activities-onchain"
 
 export default function ActivitiesPage() {
   const [userAddress, setUserAddress] = useState<string | undefined>(undefined)
@@ -35,7 +35,7 @@ export default function ActivitiesPage() {
     return () => { alive = false }
   }, [])
 
-  const { activities, loading, error, onLoadMore } = useActivitiesV2({ userAddress, pageSize: 25, startBlock })
+  const { activities, loading, error, onLoadMore } = useActivitiesOnchain({ userAddress, pageSize: 25, startBlock })
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
