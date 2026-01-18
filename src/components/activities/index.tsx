@@ -309,6 +309,19 @@ export function Activities({
                 </div>
               </div>
             )}
+
+            {/* Load More Button */}
+            {onLoadMore && !loading && (
+              <div className="mt-8 animate-fade-in-up text-center" style={{ animationDelay: "700ms" }}>
+                <Button
+                  onClick={onLoadMore}
+                  variant="outline"
+                  className="hover:scale-105 transition-transform"
+                >
+                  Load More Activities
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </main>

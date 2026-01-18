@@ -28,35 +28,35 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     eventName: 'CollectionCreated',
     fromBlock: startBlock.collection,
     toBlock: 'latest',
-    pageSize,
+    pageSize: 100,
   } as any)
   const factoryTokenMinted = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
     eventName: 'TokenMinted',
     fromBlock: startBlock.collection,
     toBlock: 'latest',
-    pageSize,
+    pageSize: 100,
   } as any)
   const factoryTokenMintedBatch = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
     eventName: 'TokenMintedBatch',
     fromBlock: startBlock.collection,
     toBlock: 'latest',
-    pageSize,
+    pageSize: 100,
   } as any)
   const factoryTokenBurned = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
     eventName: 'TokenBurned',
     fromBlock: startBlock.collection,
     toBlock: 'latest',
-    pageSize,
+    pageSize: 100,
   } as any)
   const factoryOwnershipTransferred = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
     eventName: 'OwnershipTransferred',
     fromBlock: startBlock.collection,
     toBlock: 'latest',
-    pageSize,
+    pageSize: 100,
   } as any)
 
   // NFT events
@@ -65,14 +65,14 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     eventName: 'Transfer',
     fromBlock: startBlock.mip,
     toBlock: 'latest',
-    pageSize,
+    pageSize: 100,
   } as any)
   const nftApproval = useEvents({
     address: CONTRACTS.MEDIOLANO as `0x${string}`,
     eventName: 'Approval',
     fromBlock: startBlock.mip,
     toBlock: 'latest',
-    pageSize,
+    pageSize: 100,
   } as any)
 
   const flatten = (d: any) => (d?.data?.pages ?? []).flatMap((p: any) => p?.events ?? [])
