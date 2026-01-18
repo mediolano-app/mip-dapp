@@ -131,7 +131,10 @@ export default function PortfolioView() {
       case "creator":
         return a.author.localeCompare(b.author);
       default:
-        return 0;
+        // Recent (new to old): Sort by tokenId in descending order
+        const aId = BigInt(a.tokenId);
+        const bId = BigInt(b.tokenId);
+        return aId > bId ? -1 : aId < bId ? 1 : 0;
     }
   });
 
