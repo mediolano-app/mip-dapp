@@ -226,6 +226,17 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
   // Build activities
   const activities = useMemo(() => {
     if (!userAddress) return []
+    
+    console.log('[useActivities] Raw events counts:', {
+      nftTransfer: rawNftTransfer.length,
+      nftApproval: rawNftApproval.length,
+      factoryCollectionCreated: rawFactoryCollectionCreated.length,
+      factoryTokenMinted: rawFactoryTokenMinted.length,
+      factoryTokenMintedBatch: rawFactoryTokenMintedBatch.length,
+      factoryTokenBurned: rawFactoryTokenBurned.length,
+      factoryOwnershipTransferred: rawFactoryOwnershipTransferred.length,
+    })
+    
     const items: any[] = []
 
     for (const e of rawNftTransfer) {
@@ -317,6 +328,9 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
           )
         })
       : items
+    
+    console.log('[useActivities] Total items fetched:', items.length, 'Filtered for user:', filtered.length, 'User:', normalizedAddress)
+    
     return filtered.sort((a, b) => {
       const ta = Date.parse(a.timestamp || '') || 0
       const tb = Date.parse(b.timestamp || '') || 0
