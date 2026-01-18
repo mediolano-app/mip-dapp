@@ -14,7 +14,7 @@ const navItems = [
   { href: "/", icon: Home, label: "Start", description: "Discover IP" },
   { href: "/create", icon: Plus, label: "Create", description: "Tokenize your content" },
   { href: "/portfolio", icon: Briefcase, label: "Portfolio", description: "Manage your assets" },
-  { href: "/activities", icon: Activity, label: "Activities", description: "Your onchain history" },
+  { href: "/activities", icon: Activity, label: "Activity", description: "Explore onchain activities" },
 ]
 
 export function FloatingNavigation() {

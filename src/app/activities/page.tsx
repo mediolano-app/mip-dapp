@@ -43,7 +43,7 @@ export default function ActivitiesPage() {
   }
 
   const handleCreateNew = () => {
-    router.push('/create-asset')
+    router.push('/create')
   }
 
   const handleRefresh = () => {
