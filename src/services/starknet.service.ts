@@ -43,7 +43,10 @@ export class StarkNetService {
       const owner = Array.isArray(res) ? res[0] : res;
       return num.toHex(owner) ?? null;
     } catch (error) {
-      console.error(`Error getting owner for token ${tokenId} on contract ${contractAddress}:`, error);
+      console.error(
+        `Error getting owner for token ${tokenId} on contract ${contractAddress}:`,
+        error
+      );
       return null;
     }
   }
@@ -64,13 +67,15 @@ export class StarkNetService {
       const uri = Array.isArray(res)
         ? res.map((x: any) => String(x)).join("")
         : res?.toString?.();
-      return uri as string ?? null;
+      return (uri as string) ?? null;
     } catch (error) {
-      console.error(`Error getting token URI for token ${tokenId} on contract ${contractAddress}:`, error);
+      console.error(
+        `Error getting token URI for token ${tokenId} on contract ${contractAddress}:`,
+        error
+      );
       return null;
     }
   }
-
 
   /**
    * Validate and normalize StarkNet address
@@ -83,8 +88,7 @@ export class StarkNetService {
       return null;
     }
   }
-  
-  
+
   /**
    * P-Limit light weight lib
    * Simple lib to bypass RPC rate limit abit and then run retry if we ever hit limit.
@@ -376,6 +380,13 @@ export class StarkNetService {
     }
   }
 
+
+
+
+
+
+  
+
   /**
    * Get all wallet assets (tokens + NFTs)
    */
@@ -386,8 +397,15 @@ export class StarkNetService {
     }
 
     try {
-      //   Get common token balances
-      const tokenPromises = Object.entries(CONTRACTS).map(([symbol, address]) =>
+      
+      //   Get common token balances - dynamically filter out non-ERC20 contracts
+      const erc20Contracts = Object.fromEntries(
+        Object.entries(CONTRACTS).filter(([key]) => 
+          !['COLLECTION_FACTORY', 'MEDIOLANO'].includes(key)
+        )
+      );
+      
+      const tokenPromises = Object.entries(erc20Contracts).map(([symbol, address]) =>
         this.getTokenBalance(address, normalizedAddress)
       );
 
@@ -422,6 +440,72 @@ export class StarkNetService {
   }
 
   /**
+   * Get all wallet assets (tokens + NFTs) - Version 2
+   * Uses current token balance implementation and getMyNfts for NFTs
+   */
+  public async getWalletAssetsV2(walletAddress: string): Promise<WalletAssets> {
+    const normalizedAddress = this.validateAddress(walletAddress);
+    if (!normalizedAddress) {
+      throw new Error("Invalid wallet address");
+    }
+
+    try {
+      // Get common token balances - dynamically filter out non-ERC20 contracts
+      const erc20Contracts = Object.fromEntries(
+        Object.entries(CONTRACTS).filter(([key]) => 
+          !['COLLECTION_FACTORY', 'MEDIOLANO'].includes(key)
+        )
+      );
+      
+      const tokenPromises = Object.entries(erc20Contracts).map(([symbol, address]) =>
+        this.getTokenBalance(address, normalizedAddress)
+      );
+
+      // Get NFTs using getMyNFTAssets method
+      const nftPromises = [
+        this.getMyNFTAssets(normalizedAddress),
+      ];
+
+      const [tokenResults, nftResults] = await Promise.all([
+        Promise.all(tokenPromises),
+        Promise.all(nftPromises),
+      ]);
+
+      // Filter out null token results and zero balances
+      const tokens = tokenResults.filter(
+        (token: TokenBalance | null): token is TokenBalance =>
+          token !== null && Number(token.balance) > 0
+      );
+
+      // Convert IPortfolioReturnTypeObj[] to NFTAsset[] to match WalletAssets interface
+      const nfts: NFTAsset[] = nftResults.flat().map(nft => ({
+        contractAddress: nft.contractAddress,
+        tokenId: nft.tokenId,
+        tokenURI: nft.tokenURI,
+        metadata: {
+          name: nft.metadata?.name,
+          description: nft.metadata?.description,
+          image: nft.metadata?.image,
+          attributes: nft.metadata?.attributes?.map(attr => ({
+            trait_type: attr.trait_type,
+            value: String(attr.value || '')
+          })) || []
+        },
+        type: "ERC721" as const
+      }));
+
+      return {
+        tokens: tokens,
+        nfts: nfts,
+        totalValueUSD: 0, // TODO: Implement USD value calculation
+      };
+    } catch (error) {
+      console.error("Error getting wallet assets V2:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Estimate transaction fee
    */
   public async estimateTransactionFee(
@@ -444,7 +528,6 @@ export class StarkNetService {
 
       // Get the fee estimate from StarkNet (use a simplified approach for now)
       // Since fee estimation can be complex, we'll use a fallback for now
-      console.log("Estimating fee for transaction...", call);
 
       // Return reasonable estimates based on StarkNet transaction costs
       return {
@@ -480,7 +563,7 @@ export class StarkNetService {
 
       // @ts-ignore - StarkNet receipt types are complex and dynamic
       const status =
-    //   @ts-ignore 
+        //   @ts-ignore
         receipt.finality_status || receipt.execution_status || "PENDING";
       // @ts-ignore - Block number might not always be present
       const blockNumber = receipt.block_number;
