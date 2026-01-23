@@ -81,7 +81,6 @@ export function LazyMedia({
         <div
             ref={containerRef}
             className={cn("relative overflow-hidden bg-muted", className)}
-            style={{ width: width ? 'auto' : undefined, height: height ? 'auto' : undefined }}
         >
             {!isVisible ? (
                 // Skeleton / Placeholder state

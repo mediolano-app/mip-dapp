@@ -88,7 +88,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
 
   if (variant === "list") {
     return (
-      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group bg-card/50 backdrop-blur-sm">
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <div className="p-4">
             <div className="flex items-center space-x-4">
@@ -96,9 +96,9 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                 <LazyMedia
                   src={asset.mediaUrl || "/placeholder.svg"}
                   alt={asset.title}
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 rounded-xl"
+                  width={96}
+                  height={96}
+                  className="w-24 h-24 rounded-xl shadow-sm group-hover:shadow-md transition-shadow"
                 />
                 <Badge className="absolute -top-2 -right-2 text-xs capitalize bg-primary/90 text-primary-foreground">
                   {asset.type}
