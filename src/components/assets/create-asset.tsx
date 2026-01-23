@@ -67,7 +67,18 @@ const MEDIOLANO_CONTRACT = CONTRACTS.MEDIOLANO;
 const validationSchema = Yup.object().shape({
   title: Yup.string().required("Title is required"),
   description: Yup.string().required("Description is required"),
-  mediaUrl: Yup.string().url("Media URL must be a valid URL").nullable(),
+  mediaUrl: Yup.string()
+    .test(
+      "is-url-or-data-uri",
+      "Media URL must be a valid URL or image data",
+      (value) => {
+        if (!value) return true; // nullable/optional handled by nullable()
+        const isUrl = Yup.string().url().isValidSync(value);
+        const isDataUri = value.startsWith("data:");
+        return isUrl || isDataUri;
+      }
+    )
+    .nullable(),
   externalUrl: Yup.string().url("External URL must be a valid URL").nullable(),
   // Advanced fields
   tags: Yup.array().of(Yup.string()),
