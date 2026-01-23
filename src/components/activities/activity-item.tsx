@@ -2,7 +2,8 @@ import { Badge } from "@/src/components/ui/badge"
 import { useIsMobile } from "@/src/components/ui/use-mobile"
 import { shortenAddress } from "@/src/lib/utils"
 import { TransactionDetails } from "./transaction-details"
-import { ArrowUpRight, ArrowDownLeft, Plus, Send, CheckCircle, AlertCircle, Loader, Sparkles, Flame, Pencil } from "lucide-react"
+import { ArrowUpRight, ArrowDownLeft, Plus, Send, CheckCircle, AlertCircle, Loader, Sparkles, Flame, Pencil, ExternalLink } from "lucide-react"
+import Link from "next/link"
 import {
   type ActivityItem as ActivityItemType,
   activityGradients,

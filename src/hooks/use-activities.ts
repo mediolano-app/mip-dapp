@@ -3,7 +3,7 @@ import { useEvents, useProvider } from '@starknet-react/core'
 import { CONTRACTS } from '@/src/services/constant'
 import { num } from 'starknet'
 
-type StartBlock = { mip: number; collection: number }
+type StartBlock = { mip: number }
 
 export interface UseActivitiesOptions {
   userAddress?: string
@@ -24,48 +24,6 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
 
   console.log('[useActivities] Initializing with startBlock:', startBlock, 'userAddress:', userAddress)
 
-  // Factory events
-  const factoryCollectionCreated = useEvents({
-    address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
-    eventName: 'CollectionCreated',
-    fromBlock: startBlock.collection,
-    toBlock: 'latest',
-    pageSize: 100,
-    refetchInterval: false,
-  } as any)
-  const factoryTokenMinted = useEvents({
-    address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
-    eventName: 'TokenMinted',
-    fromBlock: startBlock.collection,
-    toBlock: 'latest',
-    pageSize: 100,
-    refetchInterval: false,
-  } as any)
-  const factoryTokenMintedBatch = useEvents({
-    address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
-    eventName: 'TokenMintedBatch',
-    fromBlock: startBlock.collection,
-    toBlock: 'latest',
-    pageSize: 100,
-    refetchInterval: false,
-  } as any)
-  const factoryTokenBurned = useEvents({
-    address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
-    eventName: 'TokenBurned',
-    fromBlock: startBlock.collection,
-    toBlock: 'latest',
-    pageSize: 100,
-    refetchInterval: false,
-  } as any)
-  const factoryOwnershipTransferred = useEvents({
-    address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
-    eventName: 'OwnershipTransferred',
-    fromBlock: startBlock.collection,
-    toBlock: 'latest',
-    pageSize: 100,
-    refetchInterval: false,
-  } as any)
-
   // NFT events
   const nftTransfer = useEvents({
     address: CONTRACTS.MEDIOLANO as `0x${string}`,
@@ -85,20 +43,11 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
   } as any)
 
   const flatten = (d: any) => (d?.data?.pages ?? []).flatMap((p: any) => p?.events ?? [])
-  const rawFactoryCollectionCreated = flatten(factoryCollectionCreated)
-  const rawFactoryTokenMinted = flatten(factoryTokenMinted)
-  const rawFactoryTokenMintedBatch = flatten(factoryTokenMintedBatch)
-  const rawFactoryTokenBurned = flatten(factoryTokenBurned)
-  const rawFactoryOwnershipTransferred = flatten(factoryOwnershipTransferred)
   const rawNftTransfer = flatten(nftTransfer)
   const rawNftApproval = flatten(nftApproval)
 
   const toHex = (v: any) => { try { return num.toHex(v) } catch { return String(v) } }
   const extractTokenId = (data: any[]) => (data?.length > 2 ? toHex(data[2]) : (data?.length > 0 ? toHex(data[0]) : undefined))
-  const extractAddrs = (data: any[]) => ({
-    fromAddress: data && data.length > 0 ? toHex(data[0]) : undefined,
-    toAddress: data && data.length > 1 ? toHex(data[1]) : undefined,
-  })
   const extractNftTransferAddrs = (e: any) => {
     const keys = e?.keys || []
     return {
@@ -112,11 +61,6 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     const all = [
       ...rawNftTransfer,
       ...rawNftApproval,
-      ...rawFactoryCollectionCreated,
-      ...rawFactoryTokenMinted,
-      ...rawFactoryTokenMintedBatch,
-      ...rawFactoryTokenBurned,
-      ...rawFactoryOwnershipTransferred,
     ]
       .map((e: any) => ({ hash: String(e?.transaction_hash), block: Number(e?.block_number ?? 0) }))
       .filter((e) => !!e.hash)
@@ -133,11 +77,6 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
   }, [
     rawNftTransfer,
     rawNftApproval,
-    rawFactoryCollectionCreated,
-    rawFactoryTokenMinted,
-    rawFactoryTokenMintedBatch,
-    rawFactoryTokenBurned,
-    rawFactoryOwnershipTransferred,
   ])
 
   // Voyager data
@@ -237,29 +176,19 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     console.log('[useActivities] Raw events counts:', {
       nftTransfer: rawNftTransfer.length,
       nftApproval: rawNftApproval.length,
-      factoryCollectionCreated: rawFactoryCollectionCreated.length,
-      factoryTokenMinted: rawFactoryTokenMinted.length,
-      factoryTokenMintedBatch: rawFactoryTokenMintedBatch.length,
-      factoryTokenBurned: rawFactoryTokenBurned.length,
-      factoryOwnershipTransferred: rawFactoryOwnershipTransferred.length,
     })
 
     // Debug hook states
     console.log('[useActivities] Hook states:', {
       nftTransfer_pending: nftTransfer.isPending, nftTransfer_error: (nftTransfer.error as any)?.message,
       nftApproval_pending: nftApproval.isPending, nftApproval_error: (nftApproval.error as any)?.message,
-      factoryCollectionCreated_pending: factoryCollectionCreated.isPending, factoryCollectionCreated_error: (factoryCollectionCreated.error as any)?.message,
-      factoryTokenMinted_pending: factoryTokenMinted.isPending, factoryTokenMinted_error: (factoryTokenMinted.error as any)?.message,
-      factoryTokenMintedBatch_pending: factoryTokenMintedBatch.isPending, factoryTokenMintedBatch_error: (factoryTokenMintedBatch.error as any)?.message,
-      factoryTokenBurned_pending: factoryTokenBurned.isPending, factoryTokenBurned_error: (factoryTokenBurned.error as any)?.message,
-      factoryOwnershipTransferred_pending: factoryOwnershipTransferred.isPending, factoryOwnershipTransferred_error: (factoryOwnershipTransferred.error as any)?.message,
     })
 
     const items: any[] = []
 
     for (const e of rawNftTransfer) {
       const { fromAddress, toAddress } = extractNftTransferAddrs(e)
-      const ts = voyagerTimestamps[String(e.transaction_hash)] || new Date().toISOString()
+      const ts = voyagerTimestamps[String(e.transaction_hash)] || ''
       const base = {
         id: `${e.transaction_hash}_${e.block_number}`,
         network: 'Starknet',
@@ -281,41 +210,17 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       items.push({ ...base, type: isOutgoing ? 'transfer_out' : 'transfer_in', title: isOutgoing ? 'Transferred IP Asset' : 'Received IP Asset', description: isOutgoing ? `Transferred asset to ${toAddress}` : `Received asset from ${fromAddress}`, assetId: extractTokenId(e.data || []), fromAddress, toAddress })
     }
 
-    const baseFor = (e: any) => ({
-      id: `${e.transaction_hash}_${e.block_number}`,
-      network: 'Starknet',
-      hash: e.transaction_hash,
-      timestamp: voyagerTimestamps[String(e.transaction_hash)] || '',
-      status: 'completed',
-      metadata: { blockNumber: Number(e.block_number ?? 0), contractAddress: CONTRACTS.COLLECTION_FACTORY },
-    })
-
-    for (const e of rawFactoryCollectionCreated) {
-      const { fromAddress, toAddress } = extractAddrs(e.data || [])
-      items.push({ ...baseFor(e), type: 'collection_create', title: 'Created New Collection', description: 'Successfully created a new IP collection', fromAddress, toAddress })
-    }
-    for (const e of rawFactoryTokenMinted) {
-      const { fromAddress, toAddress } = extractAddrs(e.data || [])
-      items.push({ ...baseFor(e), type: 'mint', title: 'Minted IP Asset', description: 'Successfully minted a new intellectual property asset', assetId: extractTokenId(e.data || []), fromAddress, toAddress })
-    }
-    for (const e of rawFactoryTokenMintedBatch) {
-      const { fromAddress, toAddress } = extractAddrs(e.data || [])
-      items.push({ ...baseFor(e), type: 'mint_batch', title: 'Minted Multiple IP Assets', description: 'Successfully minted multiple intellectual property assets', fromAddress, toAddress })
-    }
-    for (const e of rawFactoryTokenBurned) {
-      const { fromAddress, toAddress } = extractAddrs(e.data || [])
-      items.push({ ...baseFor(e), type: 'burn', title: 'Burned IP Asset', description: 'IP asset has been permanently destroyed', assetId: extractTokenId(e.data || []), fromAddress, toAddress })
-    }
-    for (const e of rawFactoryOwnershipTransferred) {
-      const { fromAddress, toAddress } = extractAddrs(e.data || [])
-      const isOutgoing = userAddress && fromAddress?.toLowerCase() === userAddress.toLowerCase()
-      items.push({ ...baseFor(e), type: isOutgoing ? 'transfer_out' : 'transfer_in', title: isOutgoing ? 'Transferred Ownership' : 'Received Ownership', description: isOutgoing ? `Transferred ownership to ${toAddress}` : `Received ownership from ${fromAddress}`, fromAddress, toAddress })
-    }
-
     // NFT Approvals (owner -> approved for tokenId)
     for (const e of rawNftApproval) {
-      const { fromAddress, toAddress } = extractAddrs(e.data || [])
-      const ts = voyagerTimestamps[String(e.transaction_hash)] || new Date().toISOString()
+      const keys = e?.keys || []
+      // Approval: [owner, approved, tokenId_low, tokenId_high] -> standard is [owner, approved, tokenId]
+      // StarkNet ERC721 Approval event: owner, approved, token_id
+      // keys: [Approval_selector, owner, approved, token_id_low, token_id_high]
+      // Or sometimes it's index 1 and 2
+      const owner = keys.length > 1 ? toHex(keys[1]) : undefined
+      const approved = keys.length > 2 ? toHex(keys[2]) : undefined
+
+      const ts = voyagerTimestamps[String(e.transaction_hash)] || ''
       items.push({
         id: `${e.transaction_hash}_${e.block_number}`,
         network: 'Starknet',
@@ -324,10 +229,10 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
         status: 'completed' as const,
         type: 'approval',
         title: 'Approval Granted',
-        description: `Approved ${toAddress} for token ${extractTokenId(e.data || [])}`,
+        description: `Approved ${approved} for token ${extractTokenId(e.data || [])}`,
         assetId: extractTokenId(e.data || []),
-        fromAddress,
-        toAddress,
+        fromAddress: owner,
+        toAddress: approved,
         metadata: { blockNumber: Number(e.block_number ?? 0), contractAddress: CONTRACTS.MEDIOLANO },
       })
     }
@@ -349,11 +254,6 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
   }, [
     rawNftTransfer,
     rawNftApproval,
-    rawFactoryCollectionCreated,
-    rawFactoryTokenMinted,
-    rawFactoryTokenMintedBatch,
-    rawFactoryTokenBurned,
-    rawFactoryOwnershipTransferred,
     userAddress,
     voyagerTimestamps,
     voyagerSenders,
@@ -362,31 +262,16 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
   const loading =
     nftTransfer.isPending || nftTransfer.isFetching ||
     nftApproval.isPending || nftApproval.isFetching ||
-    factoryCollectionCreated.isPending || factoryCollectionCreated.isFetching ||
-    factoryTokenMinted.isPending || factoryTokenMinted.isFetching ||
-    factoryTokenMintedBatch.isPending || factoryTokenMintedBatch.isFetching ||
-    factoryTokenBurned.isPending || factoryTokenBurned.isFetching ||
-    factoryOwnershipTransferred.isPending || factoryOwnershipTransferred.isFetching ||
     isBatchLoading
 
   const error =
     (nftTransfer.error as any)?.message ||
     (nftApproval.error as any)?.message ||
-    (factoryCollectionCreated.error as any)?.message ||
-    (factoryTokenMinted.error as any)?.message ||
-    (factoryTokenMintedBatch.error as any)?.message ||
-    (factoryTokenBurned.error as any)?.message ||
-    (factoryOwnershipTransferred.error as any)?.message ||
     null
 
   const onLoadMore = async () => {
     if (nftTransfer.hasNextPage) await nftTransfer.fetchNextPage()
     if (nftApproval.hasNextPage) await nftApproval.fetchNextPage()
-    if (factoryCollectionCreated.hasNextPage) await factoryCollectionCreated.fetchNextPage()
-    if (factoryTokenMinted.hasNextPage) await factoryTokenMinted.fetchNextPage()
-    if (factoryTokenMintedBatch.hasNextPage) await factoryTokenMintedBatch.fetchNextPage()
-    if (factoryTokenBurned.hasNextPage) await factoryTokenBurned.fetchNextPage()
-    if (factoryOwnershipTransferred.hasNextPage) await factoryOwnershipTransferred.fetchNextPage()
   }
 
   return { activities, loading, error, onLoadMore }
