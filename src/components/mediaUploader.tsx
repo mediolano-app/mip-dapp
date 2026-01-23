@@ -62,11 +62,8 @@ const MediaUploader = forwardRef<MediaUploaderRef, MediaUploaderProps>(
             });
           } catch (err) {
             console.error("Error converting URL to file:", err);
-            toast({
-              title: "Invalid Media URL",
-              description: "We couldn't fetch the image from the provided URL.",
-              variant: "destructive",
-            });
+            // Don't show toast error here as it might be a valid URL that just blocks CORS
+            // The parent component handles the case where file is null but URL is present
             return null;
           }
         }
@@ -179,11 +176,10 @@ const MediaUploader = forwardRef<MediaUploaderRef, MediaUploaderProps>(
 
           <TabsContent value="upload" className="mt-4">
             <div
-              className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
-                isDragOver
-                  ? "border-primary bg-primary/5"
-                  : "border-border/50 hover:border-primary/50 hover:bg-muted/20"
-              }`}
+              className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${isDragOver
+                ? "border-primary bg-primary/5"
+                : "border-border/50 hover:border-primary/50 hover:bg-muted/20"
+                }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}

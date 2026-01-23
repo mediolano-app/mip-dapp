@@ -11,7 +11,7 @@ import { Badge } from "@/src/components/ui/badge"
 import { Home, Plus, Briefcase, Activity, Menu, X, Sparkles, TrendingUp, FolderOpen, Coins, Box } from "lucide-react"
 
 const navItems = [
-  { href: "/", icon: Home, label: "Start", description: "Discover IP" },
+  { href: "/", icon: Home, label: "Timeline", description: "Explore content minted onchain" },
   { href: "/create", icon: Plus, label: "Create", description: "Tokenize your content" },
   { href: "/portfolio", icon: Briefcase, label: "Portfolio", description: "Manage your assets" },
   { href: "/activities", icon: Activity, label: "Activity", description: "Explore onchain activities" },
@@ -89,15 +89,13 @@ export function FloatingNavigation() {
                     <Link key={item.href} href={item.href}>
                       <Button
                         variant={isActive ? "default" : "ghost"}
-                        className={`w-full justify-start h-auto p-3 transition-all duration-200 ${
-                          isActive ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-muted/50"
-                        }`}
+                        className={`w-full justify-start h-auto p-3 transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-muted/50"
+                          }`}
                       >
                         <div className="flex items-center space-x-3 w-full">
                           <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                              isActive ? "bg-primary-foreground/20" : "bg-muted/50"
-                            }`}
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${isActive ? "bg-primary-foreground/20" : "bg-muted/50"
+                              }`}
                           >
                             <Icon className="w-5 h-5" />
                           </div>
@@ -142,18 +140,16 @@ export function FloatingNavigation() {
 
       {/* Floating Action Button */}
       <div
-        className={`fixed bottom-6 right-4 z-50 transition-all duration-300 ${
-          isVisible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
-        }`}
+        className={`fixed bottom-6 right-4 z-50 transition-all duration-300 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
+          }`}
       >
         <Button
           onClick={toggleMenu}
           size="lg"
-          className={`w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${
-            isOpen
+          className={`w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${isOpen
               ? "bg-destructive hover:bg-destructive/90 rotate-45"
               : "bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 hover:scale-105"
-          }`}
+            }`}
         >
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </Button>
