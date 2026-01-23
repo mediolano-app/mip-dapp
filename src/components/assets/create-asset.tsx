@@ -59,6 +59,7 @@ import { SelectInput } from "../ui/forms/select-input";
 import { handleNewTagChange, handleNewTagKeyDown, tryAddTag } from "./util";
 import MediaUploader, { MediaUploaderRef } from "../mediaUploader";
 import { useIpfsUpload } from "@/src/hooks/useIpfs";
+import { Confetti } from "@/src/components/ui/animation-confetti";
 
 // Mediolano Protocol contract address
 const MEDIOLANO_CONTRACT = CONTRACTS.MEDIOLANO;
@@ -433,8 +434,8 @@ export default function CreateAssetView() {
                                         setFieldValue("type", type.id)
                                       }
                                       className={`p-3 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${values.type === type.id
-                                          ? "border-primary bg-primary/5 shadow-lg"
-                                          : "border-border hover:border-primary/50"
+                                        ? "border-primary bg-primary/5 shadow-lg"
+                                        : "border-border hover:border-primary/50"
                                         }`}
                                     >
                                       <div className="text-center space-y-2">
@@ -497,8 +498,8 @@ export default function CreateAssetView() {
                                       }
                                       disabled={isSelected}
                                       className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-default ${isSelected
-                                          ? "bg-primary text-primary-foreground opacity-70"
-                                          : "bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary cursor-pointer"
+                                        ? "bg-primary text-primary-foreground opacity-70"
+                                        : "bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary cursor-pointer"
                                         }`}
                                     >
                                       #{tag}
@@ -686,58 +687,61 @@ export default function CreateAssetView() {
                     </Card>
                     {/* Creation Success */}
                     {txHash && (
-                      <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 animate-fade-in">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start space-x-4">
-                            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                              <CheckCircle className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-bold text-green-900 dark:text-green-100 mb-2">
-                                Asset Created!
-                              </h3>
-                              <div className="space-y-2">
-                                <p className="text-sm text-green-700 dark:text-green-300">
-                                  Your intellectual property has been
-                                  successfully minted and protected on the
-                                  blockchain.
-                                </p>
-                                <div className="space-y-1">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                                      Token ID:
-                                    </span>
-                                    <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono">
-                                      {tokenId}
-                                    </code>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                                      Transaction:
-                                    </span>
-                                    <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono break-all">
-                                      {txHash}
-                                    </code>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        window.open(
-                                          `${process.env.NEXT_PUBLIC_EXPLORER_URL}/tx/${txHash}`,
-                                          "_blank"
-                                        )
-                                      }
-                                      className="shrink-0"
-                                    >
-                                      <ExternalLink className="w-3 h-3" />
-                                    </Button>
+                      <>
+                        <Confetti />
+                        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 animate-fade-in">
+                          <CardContent className="pt-6">
+                            <div className="flex items-start space-x-4">
+                              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <CheckCircle className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-bold text-green-900 dark:text-green-100 mb-2">
+                                  Asset Created!
+                                </h3>
+                                <div className="space-y-2">
+                                  <p className="text-sm text-green-700 dark:text-green-300">
+                                    Your intellectual property has been
+                                    successfully minted and protected on the
+                                    blockchain.
+                                  </p>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                                        Token ID:
+                                      </span>
+                                      <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono">
+                                        {tokenId}
+                                      </code>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                                        Transaction:
+                                      </span>
+                                      <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono break-all">
+                                        {txHash}
+                                      </code>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          window.open(
+                                            `${process.env.NEXT_PUBLIC_EXPLORER_URL}/tx/${txHash}`,
+                                            "_blank"
+                                          )
+                                        }
+                                        className="shrink-0"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </>
                     )}
 
                     {/* Create Button */}
