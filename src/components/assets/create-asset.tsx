@@ -186,16 +186,20 @@ export default function CreateAssetView() {
       };
 
       const file = await uploaderRef.current?.getFileAsync();
-      if (!file) {
+
+      // If no file and no URL provided, show error
+      if (!file && !values.mediaUrl) {
         toast({
-          title: "Select a Valid file and try again",
+          title: "Select a valid file or provide a Media URL",
           variant: "destructive",
         });
         setShowPinDialog(false);
         return;
       }
 
-      const result = await uploadToIpfs(file, metadata);
+      // If we have a file, it will be uploaded. 
+      // If we have only a URL (file is null), uploadToIpfs will use the URL in metadata.
+      const result = await uploadToIpfs(file || null, metadata);
       //console.log("Uploaded:", result);
 
       // Mint NFT using Chipi SDK's callAnyContract
@@ -348,7 +352,7 @@ export default function CreateAssetView() {
                         {/* Media Upload */}
                         <MediaUploader
                           ref={uploaderRef}
-                          onChange={(url, file) => console.log(url)}
+                          onChange={(url, file) => setFieldValue("mediaUrl", url)}
                         />
                         {/* Creator/Author */}
                         <div className="space-y-2">
