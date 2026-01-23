@@ -69,7 +69,7 @@ export function ActivityItem({
               )}
             </div>
           </div>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-2">
+          {/* <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-2">
             <TransactionDetails
               hash={hash}
               network={network}
@@ -81,7 +81,7 @@ export function ActivityItem({
                 hour: '2-digit', minute: '2-digit', second: '2-digit'
               }) : '—'}
             </time>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
