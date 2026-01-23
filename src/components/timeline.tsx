@@ -48,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
+import { LazyMedia } from "@/src/components/ui/lazy-media"
 
 const getLicenseColor = (licenseType: string) => {
   switch (licenseType) {
@@ -385,12 +386,12 @@ export function Timeline() {
                 {/* Asset Media - Top */}
                 <Link href={`/asset/${asset.slug}`}>
                   <div className="relative">
-                    <Image
+                    <LazyMedia
                       src={asset.mediaUrl || "/placeholder.svg"}
                       alt={asset.title}
                       width={600}
                       height={400}
-                      className="w-full h-64 object-cover cursor-pointer"
+                      className="w-full h-64"
                     />
                     <div className="absolute top-3 right-3">
                       <Badge

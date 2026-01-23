@@ -21,6 +21,7 @@ import { getAssetReportStatus, ReportStatus } from "@/src/lib/reported-content"
 import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert"
 import { AlertTriangle, EyeOff } from "lucide-react"
 import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
+import { LazyMedia } from "@/src/components/ui/lazy-media"
 
 
 export default function AssetPage() {
@@ -141,12 +142,12 @@ export default function AssetPage() {
               <div className="space-y-4">
                 <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
                   <div className="relative group">
-                    <Image
+                    <LazyMedia
                       src={asset.mediaUrl || "/placeholder.svg"}
                       alt={asset.title}
                       width={600}
                       height={600}
-                      className="w-full aspect-square object-cover transition-transform duration-700 group-hover:scale-102"
+                      className="w-full aspect-square transition-transform duration-700 group-hover:scale-102"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

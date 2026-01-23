@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu"
 import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
+import { LazyMedia } from "@/src/components/ui/lazy-media"
 
 interface ExpandableAssetCardProps {
   asset: AssetIP
@@ -92,12 +93,12 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
           <div className="p-4">
             <div className="flex items-center space-x-4">
               <Link href={`/asset/${asset.slug}`} className="relative flex-shrink-0">
-                <Image
+                <LazyMedia
                   src={asset.mediaUrl || "/placeholder.svg"}
                   alt={asset.title}
                   width={80}
                   height={80}
-                  className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform shadow-md"
+                  className="w-20 h-20 rounded-xl"
                 />
                 <Badge className="absolute -top-2 -right-2 text-xs capitalize bg-primary/90 text-primary-foreground">
                   {asset.type}
@@ -335,12 +336,12 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <div className="relative">
           <Link href={`/asset/${asset.slug}`}>
-            <Image
+            <LazyMedia
               src={asset.mediaUrl || "/placeholder.svg"}
               alt={asset.title}
               width={400}
               height={300}
-              className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
+              className="w-full h-64"
             />
           </Link>
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
