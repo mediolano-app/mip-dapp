@@ -5,7 +5,7 @@ import { Activity, Sparkles, X, TrendingUp, Clock, CheckCircle, Calendar } from 
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent } from "@/src/components/ui/card"
 import { ActivityList } from "@/src/components/activities/activity-list"
-import { Pagination } from "@/src/components/pagination"
+
 import { SearchInput } from "./search-input"
 import { FilterButton, FilterPanel, ActiveFilters } from "./filter-components"
 import { ActivityItem } from "@/src/types/activity"
@@ -46,8 +46,7 @@ export function Activities({
   const [filterType, setFilterType] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
   const [showFilters, setShowFilters] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+
 
   const filteredActivities = useMemo(() => {
     return initialActivities.filter((activity) => {
@@ -66,13 +65,7 @@ export function Activities({
     })
   }, [initialActivities, searchQuery, filterType, filterStatus])
 
-  const paginatedActivities = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return filteredActivities.slice(startIndex, endIndex)
-  }, [filteredActivities, currentPage, itemsPerPage])
 
-  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage)
 
   const getActivityStats = (): ActivityStats => {
     const total = initialActivities.length
@@ -93,20 +86,11 @@ export function Activities({
     setSearchQuery("")
     setFilterType("all")
     setFilterStatus("all")
-    setCurrentPage(1)
   }
 
   const hasActiveFilters = Boolean(searchQuery) || filterType !== "all" || filterStatus !== "all"
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }
 
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage)
-    setCurrentPage(1)
-  }
 
   const activeFilterCount = [
     Boolean(searchQuery) && "search",
@@ -193,8 +177,8 @@ export function Activities({
               )}
             </div>
 
-            {/* Loading State */}
-            {loading && (
+            {/* Loading State - only show if no activities and loading */}
+            {loading && initialActivities.length === 0 && (
               <div className="animate-fade-in-up" style={{ animationDelay: "500ms" }}>
                 <div className="text-center py-12">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full mb-4">
@@ -242,10 +226,10 @@ export function Activities({
             )}
 
             {/* Activities List */}
-            {!loading && !error && (
+            {(!loading || initialActivities.length > 0) && !error && (
               <div className="animate-fade-in-up" style={{ animationDelay: "500ms" }}>
                 <ActivityList
-                  activities={paginatedActivities}
+                  activities={filteredActivities}
                   copyToClipboard={onCopyToClipboard}
                   emptyStateTitle="No activities found"
                   emptyStateDescription="Your onchain activities will appear here. Try adjusting your filters or create your first IP asset."
@@ -276,31 +260,25 @@ export function Activities({
               </div>
             )}
 
-            {/* Pagination */}
-            {filteredActivities.length > 0 && (
-              <div className="mt-8 animate-fade-in-up" style={{ animationDelay: "600ms" }}>
-                <div className="bg-background/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 shadow-sm">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={filteredActivities.length}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={handlePageChange}
-                    onItemsPerPageChange={handleItemsPerPageChange}
-                  />
-                </div>
-              </div>
-            )}
+
 
             {/* Load More Button */}
-            {onLoadMore && !loading && (
+            {onLoadMore && (
               <div className="mt-8 animate-fade-in-up text-center" style={{ animationDelay: "700ms" }}>
                 <Button
                   onClick={onLoadMore}
+                  disabled={loading}
                   variant="outline"
                   className="hover:scale-105 transition-transform"
                 >
-                  Load More Activities
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More Activities"
+                  )}
                 </Button>
               </div>
             )}
