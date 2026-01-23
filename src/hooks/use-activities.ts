@@ -31,6 +31,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     fromBlock: startBlock.collection,
     toBlock: 'latest',
     pageSize: 100,
+    refetchInterval: false,
   } as any)
   const factoryTokenMinted = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
@@ -38,6 +39,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     fromBlock: startBlock.collection,
     toBlock: 'latest',
     pageSize: 100,
+    refetchInterval: false,
   } as any)
   const factoryTokenMintedBatch = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
@@ -45,6 +47,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     fromBlock: startBlock.collection,
     toBlock: 'latest',
     pageSize: 100,
+    refetchInterval: false,
   } as any)
   const factoryTokenBurned = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
@@ -52,6 +55,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     fromBlock: startBlock.collection,
     toBlock: 'latest',
     pageSize: 100,
+    refetchInterval: false,
   } as any)
   const factoryOwnershipTransferred = useEvents({
     address: CONTRACTS.COLLECTION_FACTORY as `0x${string}`,
@@ -59,6 +63,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     fromBlock: startBlock.collection,
     toBlock: 'latest',
     pageSize: 100,
+    refetchInterval: false,
   } as any)
 
   // NFT events
@@ -68,6 +73,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     fromBlock: startBlock.mip,
     toBlock: 'latest',
     pageSize: 100,
+    refetchInterval: false,
   } as any)
   const nftApproval = useEvents({
     address: CONTRACTS.MEDIOLANO as `0x${string}`,
@@ -75,6 +81,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     fromBlock: startBlock.mip,
     toBlock: 'latest',
     pageSize: 100,
+    refetchInterval: false,
   } as any)
 
   const flatten = (d: any) => (d?.data?.pages ?? []).flatMap((p: any) => p?.events ?? [])
@@ -149,7 +156,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
         setVoyagerTimestamps(Object.fromEntries(freshEntries.map(([h, v]) => [h, v.timestampIso])))
         setVoyagerSenders(Object.fromEntries(freshEntries.map(([h, v]) => [h, v.sender?.toLowerCase()])))
       }
-    } catch {}
+    } catch { }
   }, [])
 
   // Optional: provider tx log throttled (kept minimal)
@@ -158,17 +165,17 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     const toLog = sampleTxHashes.filter((h) => !loggedTx[h]).slice(0, 3)
     if (toLog.length === 0) return
     let alive = true
-    ;(async () => {
-      for (const h of toLog) {
-        try {
-          const tx = await (provider as any).getTransactionByHash?.(h)
-          if (!alive) break
-          if (tx) {}
-        } catch {}
-      }
-      if (!alive) return
-      setLoggedTx((prev) => ({ ...prev, ...Object.fromEntries(toLog.map((h) => [h, true])) }))
-    })()
+      ; (async () => {
+        for (const h of toLog) {
+          try {
+            const tx = await (provider as any).getTransactionByHash?.(h)
+            if (!alive) break
+            if (tx) { }
+          } catch { }
+        }
+        if (!alive) return
+        setLoggedTx((prev) => ({ ...prev, ...Object.fromEntries(toLog.map((h) => [h, true])) }))
+      })()
     return () => { alive = false }
   }, [sampleTxHashes, provider])
 
@@ -187,41 +194,41 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     const toFetch = unknown.slice(0, 100)
     if (toFetch.length === 0) return
     let alive = true
-    ;(async () => {
-      try {
-        setIsBatchLoading(true)
-        const res = await fetch('/api/voyager/txn-batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hashes: toFetch }),
-        })
-        if (!res.ok) throw new Error('voyager batch fetch failed')
-        const json: Record<string, { timestampIso: string; sender?: string }> = await res.json()
-        if (!alive) return
-        setVoyagerTimestamps((prev) => {
-          const next = { ...prev }
-          for (const [h, info] of Object.entries(json)) next[h] = info.timestampIso
-          return next
-        })
-        setVoyagerSenders((prev) => {
-          const next = { ...prev }
-          for (const [h, info] of Object.entries(json)) next[h] = info.sender?.toLowerCase()
-          return next
-        })
+      ; (async () => {
         try {
-          const current: Record<string, { timestampIso: string; sender?: string; cachedAt?: number }> = JSON.parse(sessionStorage.getItem('voyagerTxCache') || '{}')
-          const nowTs = Date.now()
-          const withTimestamps: Record<string, { timestampIso: string; sender?: string; cachedAt: number }> = {}
-          for (const [h, info] of Object.entries(json)) withTimestamps[h] = { ...info, cachedAt: nowTs }
-          const merged = { ...current, ...withTimestamps }
-          sessionStorage.setItem('voyagerTxCache', JSON.stringify(merged))
-        } catch {}
-      } catch (e) {
-        console.warn('voyager batch fetch error', e)
-      } finally {
-        if (alive) setIsBatchLoading(false)
-      }
-    })()
+          setIsBatchLoading(true)
+          const res = await fetch('/api/voyager/txn-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hashes: toFetch }),
+          })
+          if (!res.ok) throw new Error('voyager batch fetch failed')
+          const json: Record<string, { timestampIso: string; sender?: string }> = await res.json()
+          if (!alive) return
+          setVoyagerTimestamps((prev) => {
+            const next = { ...prev }
+            for (const [h, info] of Object.entries(json)) next[h] = info.timestampIso
+            return next
+          })
+          setVoyagerSenders((prev) => {
+            const next = { ...prev }
+            for (const [h, info] of Object.entries(json)) next[h] = info.sender?.toLowerCase()
+            return next
+          })
+          try {
+            const current: Record<string, { timestampIso: string; sender?: string; cachedAt?: number }> = JSON.parse(sessionStorage.getItem('voyagerTxCache') || '{}')
+            const nowTs = Date.now()
+            const withTimestamps: Record<string, { timestampIso: string; sender?: string; cachedAt: number }> = {}
+            for (const [h, info] of Object.entries(json)) withTimestamps[h] = { ...info, cachedAt: nowTs }
+            const merged = { ...current, ...withTimestamps }
+            sessionStorage.setItem('voyagerTxCache', JSON.stringify(merged))
+          } catch { }
+        } catch (e) {
+          console.warn('voyager batch fetch error', e)
+        } finally {
+          if (alive) setIsBatchLoading(false)
+        }
+      })()
     return () => { alive = false }
   }, [sampleTxHashes])
 
@@ -236,7 +243,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       factoryTokenBurned: rawFactoryTokenBurned.length,
       factoryOwnershipTransferred: rawFactoryOwnershipTransferred.length,
     })
-    
+
     // Debug hook states
     console.log('[useActivities] Hook states:', {
       nftTransfer_pending: nftTransfer.isPending, nftTransfer_error: (nftTransfer.error as any)?.message,
@@ -247,7 +254,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       factoryTokenBurned_pending: factoryTokenBurned.isPending, factoryTokenBurned_error: (factoryTokenBurned.error as any)?.message,
       factoryOwnershipTransferred_pending: factoryOwnershipTransferred.isPending, factoryOwnershipTransferred_error: (factoryOwnershipTransferred.error as any)?.message,
     })
-    
+
     const items: any[] = []
 
     for (const e of rawNftTransfer) {
@@ -278,7 +285,7 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
       id: `${e.transaction_hash}_${e.block_number}`,
       network: 'Starknet',
       hash: e.transaction_hash,
-      timestamp: voyagerTimestamps[String(e.transaction_hash)] || new Date().toISOString(),
+      timestamp: voyagerTimestamps[String(e.transaction_hash)] || '',
       status: 'completed',
       metadata: { blockNumber: Number(e.block_number ?? 0), contractAddress: CONTRACTS.COLLECTION_FACTORY },
     })
@@ -330,9 +337,9 @@ export function useActivities({ userAddress, pageSize = 25, startBlock }: UseAct
     // If not provided, return all activities
     const normalizedAddress = userAddress?.toLowerCase()
     const filtered = items // Return all items regardless of user
-    
+
     console.log('[useActivities] Total items before user filter:', items.length, 'Filtered:', filtered.length, 'User:', normalizedAddress)
-    
+
     return filtered.sort((a, b) => {
       const ta = Date.parse(a.timestamp || '') || 0
       const tb = Date.parse(b.timestamp || '') || 0

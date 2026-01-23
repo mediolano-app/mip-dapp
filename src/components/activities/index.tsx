@@ -30,17 +30,17 @@ interface ActivitiesProps {
   className?: string
 }
 
-export function Activities({ 
-  activities: initialActivities, 
+export function Activities({
+  activities: initialActivities,
   loading = false,
   error = null,
-  onCreateNew, 
-  onCopyToClipboard = () => {}, 
+  onCreateNew,
+  onCopyToClipboard = () => { },
   onRefresh,
   onLoadMore,
   walletAddress,
   usingMockData = false,
-  className = "" 
+  className = ""
 }: ActivitiesProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterType, setFilterType] = useState("all")
@@ -133,58 +133,23 @@ export function Activities({
                         <Activity className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent mb-2">
-                          Activity
-                        </h1>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                            Activity
+                          </h1>
+                          <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+                            <span className="text-sm font-semibold text-primary">
+                              Total: {stats.total}
+                            </span>
+                          </div>
+                        </div>
                         <p className="text-sm sm:text-base text-muted-foreground max-w-md">
                           Track your onchain activities with real-time updates
                         </p>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <Button
-                        size="sm"
-                        className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/25 hover:scale-105 transition-all duration-200"
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        <span className="hidden sm:inline">Insights</span>
-                      </Button>
-                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Stats Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <StatsCard
-                  title="Total Activities"
-                  value={stats.total}
-                  icon={TrendingUp}
-                  color="blue"
-                  delay={0}
-                />
-                <StatsCard
-                  title="Completed"
-                  value={stats.completed}
-                  icon={CheckCircle}
-                  color="green"
-                  delay={100}
-                />
-                <StatsCard
-                  title="Pending"
-                  value={stats.pending}
-                  icon={Clock}
-                  color="orange"
-                  delay={200}
-                />
-                <StatsCard
-                  title="This Month"
-                  value={stats.thisMonth}
-                  icon={Calendar}
-                  color="purple"
-                  delay={300}
-                />
               </div>
             </div>
 
@@ -252,7 +217,7 @@ export function Activities({
                       </div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">Unable to Load Activities</h3>
                       <p className="text-muted-foreground mb-4 max-w-md mx-auto">{error}</p>
-                      
+
                       {error.includes('contract') && (
                         <div className="bg-white/50 dark:bg-slate-900/50 rounded-lg p-4 text-left mb-4 border border-orange-200 dark:border-orange-900">
                           <p className="text-sm font-semibold text-foreground mb-2">💡 Troubleshooting:</p>
@@ -264,7 +229,7 @@ export function Activities({
                           </ul>
                         </div>
                       )}
-                      
+
                       {onRefresh && (
                         <Button onClick={onRefresh} variant="outline">
                           Try Again
@@ -343,35 +308,5 @@ export function Activities({
         </div>
       </main>
     </div>
-  )
-}
-
-interface StatsCardProps {
-  title: string
-  value: number
-  icon: any
-  color: string
-  delay: number
-}
-
-function StatsCard({ title, value, icon: Icon, color, delay }: StatsCardProps) {
-  return (
-    <Card
-      className={`group relative overflow-hidden bg-gradient-to-br from-${color}-50/80 via-${color}-50/50 to-background dark:from-${color}-950/50 dark:via-${color}-950/30 dark:to-background border-${color}-200/50 dark:border-${color}-800/30 transition-all duration-300 animate-fade-in-up`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      <div className={`absolute inset-0 bg-gradient-to-br from-${color}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-      <CardContent className="relative p-4 sm:p-5 text-center">
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-${color}-500 to-${color}-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-${color}-500/25`}>
-          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-        </div>
-        <div className={`text-xl sm:text-2xl font-bold text-${color}-900 dark:text-${color}-100 mb-1`}>
-          {value}
-        </div>
-        <div className={`text-xs sm:text-sm text-${color}-700 dark:text-${color}-300 font-medium`}>
-          {title}
-        </div>
-      </CardContent>
-    </Card>
   )
 }
