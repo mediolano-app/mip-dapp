@@ -5,7 +5,7 @@ import { toast } from "@/src/hooks/use-toast"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getWalletData } from "@/src/app/onboarding/_actions"
-import { useActivitiesOnchain } from "@/src/hooks/use-activities-onchain"
+import { useActivities } from "@/src/hooks/use-activities"
 
 export default function ActivitiesPage() {
   const [userAddress, setUserAddress] = useState<string | undefined>(undefined)
@@ -17,25 +17,26 @@ export default function ActivitiesPage() {
 
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      try {
-        const walletData = await getWalletData()
-        if (!alive) return
-        if (walletData?.publicKey) {
-          console.log('[ActivitiesPage] Wallet loaded:', walletData.publicKey)
-          setUserAddress(walletData.publicKey)
-        } else {
-          console.log('[ActivitiesPage] No wallet data found, displaying all activities')
+      ; (async () => {
+        try {
+          const walletData = await getWalletData()
+          if (!alive) return
+          if (walletData?.publicKey) {
+            console.log('[ActivitiesPage] Wallet loaded:', walletData.publicKey)
+            setUserAddress(walletData.publicKey)
+          } else {
+            console.log('[ActivitiesPage] No wallet data found, displaying all activities')
+          }
+        } catch (error) {
+          console.error('[ActivitiesPage] Error loading user wallet:', error)
+          console.log('[ActivitiesPage] Continuing without user address filter')
         }
-      } catch (error) {
-        console.error('[ActivitiesPage] Error loading user wallet:', error)
-        console.log('[ActivitiesPage] Continuing without user address filter')
-      }
-    })()
+      })()
     return () => { alive = false }
   }, [])
 
-  const { activities, loading, error, onLoadMore } = useActivitiesOnchain({ userAddress, pageSize: 25, startBlock })
+  // Use on-chain hook instead of API-based one
+  const { activities, loading, error, onLoadMore } = useActivities({ userAddress, pageSize: 25, startBlock })
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)

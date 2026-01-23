@@ -35,14 +35,14 @@ export function ActivityItem({
 
   const Icon =
     type === 'collection_create' ? Sparkles :
-    type === 'burn' ? Flame :
-    type === 'update' ? Pencil :
-    type === 'mint' ? Plus :
-    type === 'transfer_out' ? Send :
-    type === 'transfer_in' ? ArrowDownLeft : ArrowUpRight
-  
+      type === 'burn' || type === 'burn_batch' ? Flame :
+        type === 'update' ? Pencil :
+          type === 'mint' || type === 'mint_batch' ? Plus :
+            type === 'transfer_out' || type === 'transfer_batch' ? Send :
+              type === 'transfer_in' ? ArrowDownLeft : ArrowUpRight
+
   const StatusIcon = status === 'completed' ? CheckCircle :
-                     status === 'pending' ? Loader : AlertCircle
+    status === 'pending' ? Loader : AlertCircle
 
   return (
     <div className="flex flex-col gap-2 p-4 rounded-xl bg-gradient-to-br from-background to-muted/20 border border-border/50 hover:border-border transition-colors">
@@ -74,12 +74,12 @@ export function ActivityItem({
               network={network}
               onCopy={onCopy}
             />
-              <time className="text-xs text-muted-foreground">
-                {timestamp ? new Date(timestamp).toLocaleString(undefined, {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit'
-                }) : '—'}
-              </time>
+            <time className="text-xs text-muted-foreground">
+              {timestamp ? new Date(timestamp).toLocaleString(undefined, {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+              }) : '—'}
+            </time>
           </div>
         </div>
       </div>
