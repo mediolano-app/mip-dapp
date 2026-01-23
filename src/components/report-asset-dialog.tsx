@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/src/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
 import { Textarea } from "@/src/components/ui/textarea"
@@ -26,10 +27,11 @@ import { Flag, AlertTriangle, CheckCircle, Loader2 } from "lucide-react"
 type ContentType = "asset" | "collection" | "user"
 
 interface ReportAssetDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  children?: React.ReactNode
   contentId: string
-  contentName: string
+  contentTitle: string
   contentCreator?: string
   contentType?: ContentType
 }
@@ -47,11 +49,22 @@ const reportReasons = [
 export function ReportAssetDialog({
   open,
   onOpenChange,
+  children,
   contentId,
-  contentName,
+  contentTitle,
   contentCreator,
   contentType = "asset"
 }: ReportAssetDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+
+  const isControlled = open !== undefined
+  const show = isControlled ? open : internalOpen
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(newOpen)
+    }
+    onOpenChange?.(newOpen)
+  }
   const [step, setStep] = useState<"form" | "submitting" | "success">("form")
   const [formData, setFormData] = useState({
     reason: "",
@@ -74,7 +87,7 @@ export function ReportAssetDialog({
     const creatorText = contentCreator
       ? ` by ${contentCreator.length > 20 ? shortenAddress(contentCreator) : contentCreator}`
       : ""
-    return `Report "${contentName}"${creatorText} for policy violations or legal issues.`
+    return `Report "${contentTitle}"${creatorText} for policy violations or legal issues.`
   }
 
   // ... component
@@ -94,7 +107,7 @@ export function ReportAssetDialog({
         description: formData.description,
         email: formData.email,
         contentId,
-        contentName,
+        contentName: contentTitle,
         contentCreator,
         contentType,
       })
@@ -105,7 +118,7 @@ export function ReportAssetDialog({
 
         // Auto close after success
         setTimeout(() => {
-          onOpenChange(false)
+          handleOpenChange(false)
           setStep("form")
           setFormData({
             reason: "",
@@ -139,7 +152,7 @@ export function ReportAssetDialog({
 
   const handleClose = () => {
     if (step !== "submitting") {
-      onOpenChange(false)
+      handleOpenChange(false)
       setStep("form")
       setFormData({
         reason: "",
@@ -151,7 +164,8 @@ export function ReportAssetDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={show} onOpenChange={handleClose}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[90vw] sm:max-w-[500px] p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import type { AssetIP } from "@/src/types/asset";
 import { IPFSService } from "./ipfs.service";
 import { getApiBaseUrl } from "@/src/lib/config";
+import { isAssetReported } from "@/src/lib/reported-content";
 
 export interface BackendAsset {
   id: string;
@@ -321,6 +322,9 @@ class TimelineService {
    */
   private applyClientFilters(assets: AssetIP[], filters: TimelineFilters): AssetIP[] {
     let filtered = [...assets];
+
+    // Filter out reported content first
+    filtered = filtered.filter(asset => !isAssetReported(asset.slug));
 
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();

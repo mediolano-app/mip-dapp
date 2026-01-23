@@ -32,7 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu"
-import { ReportContentDialog } from "@/src/components/report-content-dialog"
+import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
 
 interface ExpandableAssetCardProps {
   asset: AssetIP
@@ -140,7 +140,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                       </Button>
                     </CollapsibleTrigger>
 
-                     
+
                     <Link href={`/asset/${asset.slug}`}>
                       <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
                         <Eye className="w-4 h-4 mr-1" />
@@ -183,11 +183,11 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                         {!isOwner && (
                           <>
                             <DropdownMenuSeparator />
-                            <ReportContentDialog
+                            <ReportAssetDialog
                               contentType="asset"
                               contentId={asset.id}
                               contentTitle={asset.title}
-                              contentOwner={asset.author}
+                              contentCreator={asset.author}
                             >
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
@@ -196,7 +196,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                                 <Flag className="w-4 h-4 mr-2" />
                                 Report Content
                               </DropdownMenuItem>
-                            </ReportContentDialog>
+                            </ReportAssetDialog>
                           </>
                         )}
                       </DropdownMenuContent>
@@ -208,8 +208,8 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
 
             <CollapsibleContent className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/30">
-               
-               
+
+
                 {/* Creator Info
                 <div className="space-y-3">
                   <h4 className="font-medium text-foreground text-sm">Creator</h4>
@@ -304,10 +304,10 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                   </div>
                 </div>
 
-                
+
                 {asset.externalUrl && (
                   <div className="space-y-3">
-                    
+
                     <div className="flex items-center space-x-2">
                       <Globe className="w-4 h-4 text-muted-foreground" />
                       <a
@@ -342,7 +342,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
               height={300}
               className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
             />
-          </Link> 
+          </Link>
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           <div className="absolute top-3 right-3">
@@ -385,11 +385,11 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                 {!isOwner && (
                   <>
                     <DropdownMenuSeparator />
-                    <ReportContentDialog
+                    <ReportAssetDialog
                       contentType="asset"
                       contentId={asset.id}
                       contentTitle={asset.title}
-                      contentOwner={asset.author}
+                      contentCreator={asset.author}
                     >
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
@@ -398,7 +398,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                         <Flag className="w-4 h-4 mr-2" />
                         Report Content
                       </DropdownMenuItem>
-                    </ReportContentDialog>
+                    </ReportAssetDialog>
                   </>
                 )}
               </DropdownMenuContent>
@@ -421,7 +421,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
         <CardContent className="p-6">
           <div className="space-y-4">
             <div>
-             <Link href={`/asset/${asset.slug}`}>
+              <Link href={`/asset/${asset.slug}`}>
                 <h3 className="font-semibold text-foreground mb-2 truncate group-hover:text-primary transition-colors cursor-pointer text-lg">
                   {asset.title}
                 </h3>
@@ -444,8 +444,8 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
             </div>
 
             <div className="flex space-x-2">
-              
-             
+
+
               <Link href={`/asset/${asset.slug}`} className="flex-1">
                 <Button
                   variant="outline"
@@ -456,9 +456,9 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                   View Asset
                 </Button>
               </Link>
-             
-              
-              
+
+
+
               <CollapsibleTrigger asChild>
                 <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
                   <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
@@ -469,8 +469,8 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
 
           <CollapsibleContent className="mt-4">
             <div className="space-y-4 pt-4 border-t border-border/30">
-             
-             
+
+
               {/* Creator Info 
               <div>
                 <h4 className="font-medium text-foreground mb-3 text-sm">Creator</h4>

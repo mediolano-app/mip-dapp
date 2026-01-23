@@ -47,7 +47,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { ReportContentDialog } from "@/src/components/report-content-dialog"
+import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
 
 const getLicenseColor = (licenseType: string) => {
   switch (licenseType) {
@@ -480,12 +480,11 @@ export function Timeline() {
 
                         <DropdownMenuSeparator />
 
-                        <ReportContentDialog
+                        <ReportAssetDialog
                           contentType="asset"
                           contentId={asset.id}
                           contentTitle={asset.title}
-                          contentOwner={asset.author}
-                          contentImage={asset.mediaUrl}
+                          contentCreator={asset.author}
                         >
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive cursor-pointer"
@@ -494,7 +493,7 @@ export function Timeline() {
                             <Flag className="w-4 h-4 mr-2" />
                             Report Asset
                           </DropdownMenuItem>
-                        </ReportContentDialog>
+                        </ReportAssetDialog>
 
                       </DropdownMenuContent>
                     </DropdownMenu>

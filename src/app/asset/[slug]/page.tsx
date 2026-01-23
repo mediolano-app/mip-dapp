@@ -8,7 +8,7 @@ import { Button } from "@/src/components/ui/button"
 import { Separator } from "@/src/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
 import { AssetTemplate } from "@/src/components/asset-template"
-import { Share, ExternalLink, Shield, Send, MoreHorizontal, Copy, Calendar, Globe, ArrowLeft, Flag, Edit, Users, XCircle, CheckCircle, FileText} from "lucide-react"
+import { Share, ExternalLink, Shield, Send, MoreHorizontal, Copy, Calendar, Globe, ArrowLeft, Flag, Edit, Users, XCircle, CheckCircle, FileText } from "lucide-react"
 import { toast } from "@/src/hooks/use-toast"
 import Image from "next/image"
 import Link from "next/link"
@@ -17,7 +17,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { getLicenseColor, getProtectionIcon } from "@/src/lib/asset-display-utils"
 import { getExplorerUrlForToken } from "@/src/lib/explorer"
 
-import { ReportContentDialog } from "@/src/components/report-content-dialog"
+import { getAssetReportStatus, ReportStatus } from "@/src/lib/reported-content"
+import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert"
+import { AlertTriangle, EyeOff } from "lucide-react"
+import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
 
 
 export default function AssetPage() {
@@ -26,6 +29,7 @@ export default function AssetPage() {
   const slug = params.slug as string
   const { asset, isLoading } = useAssetBySlug(slug)
   const [isOwner] = useState(false)
+  const [showHiddenContent, setShowHiddenContent] = useState(false)
 
 
   const handleShare = () => {
@@ -78,6 +82,41 @@ export default function AssetPage() {
     )
   }
 
+  const reportStatus = asset ? getAssetReportStatus(asset.id) : "none"
+  const isHidden = reportStatus === "hidden"
+  const isFlagged = reportStatus === "flagged"
+
+  if (isHidden && !showHiddenContent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-red-200 dark:border-red-900 bg-background/20 backdrop-blur-xl shadow-xl">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+              <EyeOff className="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <CardTitle className="text-xl text-red-600 dark:text-red-400">Content Hidden</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              This asset has been reported and hidden due to potential violations of our community guidelines or terms of service.
+            </p>
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => setShowHiddenContent(true)}
+              >
+                View Content
+              </Button>
+              <Button variant="ghost" onClick={() => router.back()}>
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
       <main className="pb-20">
@@ -87,6 +126,16 @@ export default function AssetPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
+
+            {(isFlagged || (isHidden && showHiddenContent)) && (
+              <Alert variant="destructive" className="mb-6 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 text-red-800 dark:text-red-200">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Community Warning</AlertTitle>
+                <AlertDescription>
+                  This content has been flagged by the community for potential policy violations. Please exercise caution.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               <div className="space-y-4">
@@ -145,7 +194,7 @@ export default function AssetPage() {
                     </>
                   ) : (
                     <>
-                    {/* 
+                      {/* 
                     <Button variant="outline" className="col-span-2">
                       <Users className="w-4 h-4 mr-2" />
                       Creator {asset.author || ""}
@@ -222,20 +271,20 @@ export default function AssetPage() {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <ReportContentDialog
+                        <ReportAssetDialog
                           contentType="asset"
                           contentId={asset.slug}
                           contentTitle={asset.title}
-                          contentOwner={asset.creator?.id}
+                          contentCreator={asset.creator?.id}
                         >
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600 focus:text-red-600"
                             onSelect={(e) => e.preventDefault()}
                           >
                             <Flag className="w-4 h-4 mr-2" />
                             Report Asset
                           </DropdownMenuItem>
-                        </ReportContentDialog>
+                        </ReportAssetDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -243,7 +292,7 @@ export default function AssetPage() {
 
                 <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                   <CardHeader className="pb-3">
-                   {/*  <CardTitle className="text-lg">Asset Information</CardTitle>*/}
+                    {/*  <CardTitle className="text-lg">Asset Information</CardTitle>*/}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -267,7 +316,7 @@ export default function AssetPage() {
 
                     {asset.externalUrl && (
                       <div>
-                        
+
                         <div className="flex items-center space-x-2 mt-1">
                           <Globe className="w-4 h-4 text-muted-foreground" />
                           <a
@@ -314,8 +363,8 @@ export default function AssetPage() {
                           This intellectual property is registered onchain and protected with The Berne Convention and Proof of Ownership.
                         </p>
                         <p className="text-muted-foreground text-sm mb-2">
-                          The Berne Convention primarily protects copyright, which safeguards literary, artistic and creative works. The convention ensures that works originating in one member country receive the same copyright protection in all other member countries as their own nationals. 
-                          </p>
+                          The Berne Convention primarily protects copyright, which safeguards literary, artistic and creative works. The convention ensures that works originating in one member country receive the same copyright protection in all other member countries as their own nationals.
+                        </p>
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
                             {asset.protectionScope || "Unknown Scope"}
