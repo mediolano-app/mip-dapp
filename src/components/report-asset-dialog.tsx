@@ -164,7 +164,7 @@ export function ReportAssetDialog({
   }
 
   return (
-    <Dialog open={show} onOpenChange={handleClose}>
+    <Dialog open={show} onOpenChange={(isOpen) => isOpen ? handleOpenChange(true) : handleClose()}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[90vw] sm:max-w-[500px] p-4 sm:p-6">
         <DialogHeader>

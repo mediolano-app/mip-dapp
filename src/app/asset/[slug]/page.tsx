@@ -44,7 +44,7 @@ export default function AssetPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
+      <div className="min-h-screen">
         <main className="pb-20">
           <div className="px-4 py-8">
             <div className="max-w-6xl mx-auto">
@@ -68,12 +68,12 @@ export default function AssetPage() {
 
   if (!asset) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background">
+      <div className="min-h-screen">
         <main className="pb-20">
           <div className="px-4 py-8">
             <div className="max-w-6xl mx-auto text-center py-16">
               <h1 className="text-2xl font-bold text-foreground mb-4">Asset Not Found</h1>
-              <p className="text-muted-foreground mb-6">The asset you're looking could not be found.</p>
+              <p className="text-muted-foreground mb-6">The content you're looking could not be found.</p>
               <Button onClick={() => router.push("/")}>Back to Start</Button>
             </div>
           </div>
@@ -88,21 +88,21 @@ export default function AssetPage() {
 
   if (isHidden && !showHiddenContent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-red-200 dark:border-red-900 bg-background/20 backdrop-blur-xl shadow-xl">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-red-200 dark:border-red-900 shadow-xl">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
-              <EyeOff className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <EyeOff className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <CardTitle className="text-xl text-red-600 dark:text-red-400">Content Hidden</CardTitle>
+            <CardTitle className="text-xl text-blue-600 dark:text-blue-400">Reported Content</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
-              This asset has been reported and hidden due to potential violations of our community guidelines or terms of service.
+              This asset has been flagged by the community as potentially violating our terms of service.
             </p>
             <div className="flex flex-col gap-2 pt-2">
               <Button
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => setShowHiddenContent(true)}
               >
                 View Content
@@ -130,9 +130,9 @@ export default function AssetPage() {
             {(isFlagged || (isHidden && showHiddenContent)) && (
               <Alert variant="destructive" className="mb-6 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 text-red-800 dark:text-red-200">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Community Warning</AlertTitle>
+                <AlertTitle>Community Report</AlertTitle>
                 <AlertDescription>
-                  This content has been flagged by the community for potential policy violations. Please exercise caution.
+                  This content has been flagged by the community for potential policy violations.
                 </AlertDescription>
               </Alert>
             )}
