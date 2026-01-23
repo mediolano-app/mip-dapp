@@ -111,7 +111,7 @@ class TimelineService {
       if (filters.collectionId) {
         params.append("collectionId", filters.collectionId);
       }
-      
+
       const response = await fetch(`${this.baseUrl}/api/assets?${params}`, {
         headers: {
           'Accept': 'application/json',
@@ -119,42 +119,50 @@ class TimelineService {
         },
         signal,
       });
-      
+
       if (!response.ok) {
         throw new Error(`Backend API error: ${response.status}`);
       }
 
       const backendData = await response.json();
       const backendAssets = backendData.data as BackendAsset[];
+      const total = parseInt(backendData.pagination?.total?.toString() || backendAssets.length.toString());
 
-      // Transform backend assets to AssetIP format
+      // Robust pagination fallback: if backend returns too many items, slice locally.
+      // This happens if the backend ignores limit/offset parameters.
+      let sliceToProcess = backendAssets;
+      if (backendAssets.length > requestedLimit) {
+        if (backendAssets.length >= total && requestedOffset > 0) {
+          // Backend likely ignored both limit and offset
+          sliceToProcess = backendAssets.slice(requestedOffset, requestedOffset + requestedLimit);
+        } else {
+          // Backend likely ignored limit but maybe respected offset
+          sliceToProcess = backendAssets.slice(0, requestedLimit);
+        }
+      }
+
+      // Transform ONLY the sliced batch to save performance (avoids excessive IPFS fetches)
       const assets = await Promise.all(
-        backendAssets.map((asset) => this.transformBackendAsset(asset))
+        sliceToProcess.map((asset) => this.transformBackendAsset(asset))
       );
 
-      // Apply client-side filters that aren't handled by backend
+      // Apply client-side filters
       const filteredAssets = this.applyClientFilters(assets, filters);
 
-      const total = parseInt(backendData.pagination.total.toString());
-      const limit = parseInt(backendData.pagination.limit.toString());
-      const offset = parseInt(backendData.pagination.offset.toString());
-      const apiHasMore = backendData.pagination.hasMore === true || backendData.pagination.hasMore === "true";
-      
-      const actualHasMore = apiHasMore && (offset + filteredAssets.length) < total;
-      
+      const hasMore = (requestedOffset + sliceToProcess.length) < total;
 
       return {
         assets: filteredAssets,
         pagination: {
           total,
-          limit,
-          offset,
-          hasMore: actualHasMore,
+          limit: requestedLimit,
+          offset: requestedOffset,
+          hasMore,
         },
       };
     } catch (error) {
       console.error("Timeline service error:", error);
-      
+
       // Return empty result if backend is unavailable due to CORS/500 errors
       if (error instanceof TypeError && error.message === "Failed to fetch") {
         return {
@@ -167,7 +175,7 @@ class TimelineService {
           },
         };
       }
-      
+
       throw new Error("Failed to fetch timeline assets");
     }
   }
@@ -189,7 +197,7 @@ class TimelineService {
     // Parse token ID from backend ID (the ID is just the token number)
     const tokenId = backendAsset.id;
     const contractAddress = this.getContractAddressFromSource(backendAsset.indexerSource);
-    
+
     // Extract values from attributes array
     const attributesMap = this.parseAttributes(metadata.attributes || []);
 
@@ -215,7 +223,7 @@ class TimelineService {
       attribution: this.parseBoolean(attributesMap.Attribution ?? metadata.attribution, true),
       registrationDate: metadata.properties?.registration_date || this.formatDateFromBlock(backendAsset.mintedAtBlock) || this.formatDate(metadata.created_at || metadata.createdAt || metadata.timestamp),
       protectionStatus: attributesMap["Protection Status"] || metadata.protection_status || "Protected",
-      protectionScope: attributesMap["Protection Scope"] || metadata.protection_scope || "Global", 
+      protectionScope: attributesMap["Protection Scope"] || metadata.protection_scope || "Global",
       protectionDuration: metadata.properties?.protection_duration || metadata.protection_duration || "70 years",
       creator: {
         id: backendAsset.collection?.creator || backendAsset.owner,
@@ -252,18 +260,21 @@ class TimelineService {
   private async fetchMetadataWithCache(uri: string): Promise<IPFSMetadata> {
     const cacheKey = uri;
     const cached = this.metadataCache.get(cacheKey);
-    
+
     if (cached) {
       return cached;
     }
 
     try {
       // Handle different URI formats
+      // Handle different URI formats and clean up double protocols
       let fetchUrl = uri;
-      
-      // Fix duplicate IPFS gateway URLs (like the one in token 22)
-      if (uri.includes("https://ipfs.io/ipfs/https://ipfs.io/ipfs/")) {
-        fetchUrl = uri.replace("https://ipfs.io/ipfs/https://ipfs.io/ipfs/", "https://ipfs.io/ipfs/");
+
+      if (uri.includes("https://ipfs.io/ipfs/")) {
+        // Keep getting the last part of the has if it is repeated
+        const parts = uri.split("https://ipfs.io/ipfs/");
+        const hash = parts[parts.length - 1];
+        fetchUrl = `https://ipfs.io/ipfs/${hash}`;
       } else if (uri.startsWith("ipfs://")) {
         fetchUrl = uri.replace("ipfs://", "https://ipfs.io/ipfs/");
       } else if (uri.startsWith("data:application/json")) {
@@ -282,10 +293,10 @@ class TimelineService {
       }
 
       const metadata = await response.json();
-      
+
       // Cache the metadata
       this.metadataCache.set(cacheKey, metadata);
-      
+
       // Clean up old cache entries occasionally
       if (this.metadataCache.size > 500) {
         this.cleanupCache();
@@ -337,7 +348,7 @@ class TimelineService {
         filters.licenses!.some((license) => {
           const assetLicense = asset.licenseType.toLowerCase();
           const filterLicense = license.toLowerCase();
-          
+
           // Handle specific license mappings
           if (filterLicense === "all-rights-reserved") {
             return assetLicense.includes("all-rights") || assetLicense.includes("all rights");
@@ -348,7 +359,7 @@ class TimelineService {
           if (filterLicense === "mit" || filterLicense === "apache" || filterLicense === "gpl") {
             return assetLicense.includes(filterLicense) || assetLicense.includes("open-source");
           }
-          
+
           return assetLicense.includes(filterLicense);
         })
       );
@@ -363,7 +374,7 @@ class TimelineService {
     if (filters.tags && filters.tags.length > 0) {
       filtered = filtered.filter((asset) => {
         const assetTags = asset.tags.toLowerCase();
-        return filters.tags!.some((tag) => 
+        return filters.tags!.some((tag) =>
           assetTags.includes(tag.toLowerCase())
         );
       });
@@ -373,7 +384,7 @@ class TimelineService {
     if (filters.dateRange && filters.dateRange !== "all") {
       const now = new Date();
       const cutoffDate = new Date();
-      
+
       switch (filters.dateRange) {
         case "today":
           cutoffDate.setHours(0, 0, 0, 0);
@@ -422,17 +433,17 @@ class TimelineService {
    */
   private parseAttributes(attributes: Array<{ trait_type: string; value: string | number }>): Record<string, string> {
     const attributesMap: Record<string, string> = {};
-    
+
     if (!attributes || !Array.isArray(attributes)) {
       return attributesMap;
     }
-    
+
     attributes.forEach((attr) => {
       if (attr.trait_type && attr.value !== undefined) {
         attributesMap[attr.trait_type] = String(attr.value);
       }
     });
-    
+
     return attributesMap;
   }
 
@@ -443,7 +454,7 @@ class TimelineService {
     const normalized = type.toLowerCase().trim();
     const typeMap: Record<string, string> = {
       "image": "Image",
-      "video": "Video", 
+      "video": "Video",
       "audio": "Music",
       "music": "Music",
       "document": "Document",
@@ -481,10 +492,13 @@ class TimelineService {
 
   private getDisplayUrl(url?: string): string {
     if (!url) return "/placeholder.svg";
-    
+
     // Fix duplicate IPFS gateway URLs
-    if (url.includes("https://ipfs.io/ipfs/https://ipfs.io/ipfs/")) {
-      return url.replace("https://ipfs.io/ipfs/https://ipfs.io/ipfs/", "https://ipfs.io/ipfs/");
+    // Fix duplicate IPFS gateway URLs
+    if (url.includes("https://ipfs.io/ipfs/")) {
+      const parts = url.split("https://ipfs.io/ipfs/");
+      const hash = parts[parts.length - 1];
+      return `https://ipfs.io/ipfs/${hash}`;
     }
     if (url.startsWith("ipfs://")) {
       return url.replace("ipfs://", "https://ipfs.io/ipfs/");
@@ -505,10 +519,10 @@ class TimelineService {
     // More accurate Starknet mainnet parameters
     const STARKNET_GENESIS_TIMESTAMP = 1669746000; // Nov 29, 2022 - Starknet mainnet launch
     const AVERAGE_BLOCK_TIME = 3.5; // More accurate: ~3.5 seconds per block
-    
+
     const estimatedTimestamp = STARKNET_GENESIS_TIMESTAMP + (blockNumber * AVERAGE_BLOCK_TIME);
     const date = new Date(estimatedTimestamp * 1000);
-    
+
     return date.toISOString().split("T")[0];
   }
 
@@ -516,16 +530,16 @@ class TimelineService {
     // Updated Starknet mainnet parameters for accurate time calculation
     const STARKNET_GENESIS_TIMESTAMP = 1669746000; // Nov 29, 2022 - Starknet mainnet launch
     const AVERAGE_BLOCK_TIME = 3.5; // More accurate: ~3.5 seconds per block
-    
+
     const estimatedTimestamp = STARKNET_GENESIS_TIMESTAMP + (blockNumber * AVERAGE_BLOCK_TIME);
     const now = Date.now() / 1000;
     const secondsAgo = now - estimatedTimestamp;
-    
+
     // Add bounds checking for unrealistic values
     if (secondsAgo < 0) {
       return "Recently";
     }
-    
+
     if (secondsAgo > 63072000) { // More than 2 years
       return "Long ago";
     }
@@ -547,7 +561,7 @@ class TimelineService {
   private getRelativeTimeWithFallback(blockNumber: number, registrationDate?: string): string {
     // Try block-based calculation first
     const blockTime = this.getRelativeTime(blockNumber);
-    
+
     if (blockTime === "Long ago" && registrationDate) {
       try {
         const regDate = new Date(registrationDate);
@@ -566,7 +580,7 @@ class TimelineService {
         return blockTime;
       }
     }
-    
+
     return blockTime;
   }
 
@@ -599,7 +613,7 @@ class TimelineService {
       const response = await fetch(
         `${this.baseUrl}/api/transfers?limit=${limit}&sortBy=block&sortOrder=desc`
       );
-      
+
       if (!response.ok) {
         throw new Error(`Backend API error: ${response.status}`);
       }

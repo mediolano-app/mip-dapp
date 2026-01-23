@@ -54,6 +54,7 @@
     "motion": "^12.18.1",
     "next": "^15.5.9",
     "next-themes": "latest",
+    "nodemailer": "^7.0.12",
     "pinata": "^2.4.9",
     "react": "^19",
     "react-day-picker": "8.10.1",

@@ -107,8 +107,8 @@ export default function CreateAssetView() {
     title: "",
     description: "",
     mediaUrl: "",
-    externalUrl: "https://example.com",
-    author: publicKey || "", 
+    externalUrl: "https://mip.mediolano.app",
+    author: publicKey || "",
 
     // Advanced fields with smart defaults
     type: "post", // Default to "Post" like social media
@@ -123,7 +123,7 @@ export default function CreateAssetView() {
     registrationDate: new Date().toISOString().split("T")[0],
     protectionStatus: "Protected",
     protectionScope: "Global",
-    protectionDuration: "50~70 years",
+    protectionDuration: "50+ years",
     newTag: "",
   };
 
@@ -198,8 +198,8 @@ export default function CreateAssetView() {
       //console.log("Uploaded:", result);
 
       // Mint NFT using Chipi SDK's callAnyContract
-        const mintResult = await callAnyContractAsync({
-        params:{
+      const mintResult = await callAnyContractAsync({
+        params: {
           encryptKey: pin,
           wallet: {
             publicKey: publicKey,
@@ -216,8 +216,8 @@ export default function CreateAssetView() {
               ],
             },
           ],
-          },
-          bearerToken: token,
+        },
+        bearerToken: token,
       });
 
       // const mintResult = await callAnyContractAsync({
@@ -253,8 +253,8 @@ export default function CreateAssetView() {
         });
 
         // Force full reload to ensure latest data
-        setTimeout(function() {
-            window.location.assign("/portfolio");
+        setTimeout(function () {
+          window.location.assign("/portfolio");
         }, 7000);
 
       }
@@ -301,11 +301,11 @@ export default function CreateAssetView() {
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold text-foreground">
-                    Create New Asset
+                    Create
                   </h1>
                 </div>
                 <p className="text-muted-foreground text-sm">
-                  Share your creative work and protect it as intellectual property
+                  Protect and share your creative work
                 </p>
               </div>
 
@@ -432,11 +432,10 @@ export default function CreateAssetView() {
                                       onClick={() =>
                                         setFieldValue("type", type.id)
                                       }
-                                      className={`p-3 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
-                                        values.type === type.id
+                                      className={`p-3 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${values.type === type.id
                                           ? "border-primary bg-primary/5 shadow-lg"
                                           : "border-border hover:border-primary/50"
-                                      }`}
+                                        }`}
                                     >
                                       <div className="text-center space-y-2">
                                         <div
@@ -497,11 +496,10 @@ export default function CreateAssetView() {
                                         ])
                                       }
                                       disabled={isSelected}
-                                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-default ${
-                                        isSelected
+                                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-default ${isSelected
                                           ? "bg-primary text-primary-foreground opacity-70"
                                           : "bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary cursor-pointer"
-                                      }`}
+                                        }`}
                                     >
                                       #{tag}
                                     </button>
@@ -759,9 +757,8 @@ export default function CreateAssetView() {
                             </div>
                             <div className="flex items-center space-x-2">
                               <div
-                                className={`w-3 h-3 rounded-full ${
-                                  user ? "bg-green-500" : "bg-yellow-500"
-                                } animate-pulse`}
+                                className={`w-3 h-3 rounded-full ${user ? "bg-green-500" : "bg-yellow-500"
+                                  } animate-pulse`}
                               ></div>
                               <span className="text-sm text-muted-foreground">
                                 {user ? "Ready" : "Loading"}
