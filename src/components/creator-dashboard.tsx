@@ -25,7 +25,7 @@ import {
   MoreHorizontal,
 } from "lucide-react"
 import { VerifiedSocialBadges } from "@/src/components/verified-social-badges"
-import { ReportContentDialog } from "@/src/components/report-content-dialog"
+import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -167,11 +167,11 @@ export function CreatorDashboard({ creator, assetCount }: CreatorDashboardProps)
                     View Portfolio
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <ReportContentDialog
-                    contentType="profile"
+                  <ReportAssetDialog
+                    contentType="user"
                     contentId={creator.id || creator.username}
                     contentTitle={creator.displayName || creator.username}
-                    contentOwner={creator.username}
+                    contentCreator={creator.username}
                   >
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
@@ -180,7 +180,7 @@ export function CreatorDashboard({ creator, assetCount }: CreatorDashboardProps)
                       <Flag className="w-4 h-4 mr-2" />
                       Report Profile
                     </DropdownMenuItem>
-                  </ReportContentDialog>
+                  </ReportAssetDialog>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -319,7 +319,7 @@ export function CreatorDashboard({ creator, assetCount }: CreatorDashboardProps)
               <div className="bg-muted/30 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                   <Zap className="w-5 h-5 mr-2 text-primary" />
-                   Social Accounts
+                  Social Accounts
                 </h3>
 
                 <div className="space-y-3">

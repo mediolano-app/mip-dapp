@@ -59,6 +59,7 @@ import { SelectInput } from "../ui/forms/select-input";
 import { handleNewTagChange, handleNewTagKeyDown, tryAddTag } from "./util";
 import MediaUploader, { MediaUploaderRef } from "../mediaUploader";
 import { useIpfsUpload } from "@/src/hooks/useIpfs";
+import { Confetti } from "@/src/components/ui/animation-confetti";
 
 // Mediolano Protocol contract address
 const MEDIOLANO_CONTRACT = CONTRACTS.MEDIOLANO;
@@ -66,7 +67,18 @@ const MEDIOLANO_CONTRACT = CONTRACTS.MEDIOLANO;
 const validationSchema = Yup.object().shape({
   title: Yup.string().required("Title is required"),
   description: Yup.string().required("Description is required"),
-  mediaUrl: Yup.string().url("Media URL must be a valid URL").nullable(),
+  mediaUrl: Yup.string()
+    .test(
+      "is-url-or-data-uri",
+      "Media URL must be a valid URL or image data",
+      (value) => {
+        if (!value) return true; // nullable/optional handled by nullable()
+        const isUrl = Yup.string().url().isValidSync(value);
+        const isDataUri = value.startsWith("data:");
+        return isUrl || isDataUri;
+      }
+    )
+    .nullable(),
   externalUrl: Yup.string().url("External URL must be a valid URL").nullable(),
   // Advanced fields
   tags: Yup.array().of(Yup.string()),
@@ -107,8 +119,8 @@ export default function CreateAssetView() {
     title: "",
     description: "",
     mediaUrl: "",
-    externalUrl: "https://example.com",
-    author: publicKey || "", 
+    externalUrl: "https://mip.mediolano.app",
+    author: publicKey || "",
 
     // Advanced fields with smart defaults
     type: "post", // Default to "Post" like social media
@@ -123,7 +135,7 @@ export default function CreateAssetView() {
     registrationDate: new Date().toISOString().split("T")[0],
     protectionStatus: "Protected",
     protectionScope: "Global",
-    protectionDuration: "50~70 years",
+    protectionDuration: "50+ years",
     newTag: "",
   };
 
@@ -185,21 +197,25 @@ export default function CreateAssetView() {
       };
 
       const file = await uploaderRef.current?.getFileAsync();
-      if (!file) {
+
+      // If no file and no URL provided, show error
+      if (!file && !values.mediaUrl) {
         toast({
-          title: "Select a Valid file and try again",
+          title: "Select a valid file or provide a Media URL",
           variant: "destructive",
         });
         setShowPinDialog(false);
         return;
       }
 
-      const result = await uploadToIpfs(file, metadata);
+      // If we have a file, it will be uploaded. 
+      // If we have only a URL (file is null), uploadToIpfs will use the URL in metadata.
+      const result = await uploadToIpfs(file || null, metadata);
       //console.log("Uploaded:", result);
 
       // Mint NFT using Chipi SDK's callAnyContract
-        const mintResult = await callAnyContractAsync({
-        params:{
+      const mintResult = await callAnyContractAsync({
+        params: {
           encryptKey: pin,
           wallet: {
             publicKey: publicKey,
@@ -216,8 +232,8 @@ export default function CreateAssetView() {
               ],
             },
           ],
-          },
-          bearerToken: token,
+        },
+        bearerToken: token,
       });
 
       // const mintResult = await callAnyContractAsync({
@@ -253,8 +269,8 @@ export default function CreateAssetView() {
         });
 
         // Force full reload to ensure latest data
-        setTimeout(function() {
-            window.location.assign("/portfolio");
+        setTimeout(function () {
+          window.location.assign("/portfolio");
         }, 7000);
 
       }
@@ -301,11 +317,11 @@ export default function CreateAssetView() {
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold text-foreground">
-                    Create New Asset
+                    Create
                   </h1>
                 </div>
                 <p className="text-muted-foreground text-sm">
-                  Share your creative work and protect it as intellectual property
+                  Protect and share your creative work
                 </p>
               </div>
 
@@ -347,7 +363,7 @@ export default function CreateAssetView() {
                         {/* Media Upload */}
                         <MediaUploader
                           ref={uploaderRef}
-                          onChange={(url, file) => console.log(url)}
+                          onChange={(url, file) => setFieldValue("mediaUrl", url)}
                         />
                         {/* Creator/Author */}
                         <div className="space-y-2">
@@ -432,11 +448,10 @@ export default function CreateAssetView() {
                                       onClick={() =>
                                         setFieldValue("type", type.id)
                                       }
-                                      className={`p-3 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
-                                        values.type === type.id
-                                          ? "border-primary bg-primary/5 shadow-lg"
-                                          : "border-border hover:border-primary/50"
-                                      }`}
+                                      className={`p-3 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${values.type === type.id
+                                        ? "border-primary bg-primary/5 shadow-lg"
+                                        : "border-border hover:border-primary/50"
+                                        }`}
                                     >
                                       <div className="text-center space-y-2">
                                         <div
@@ -497,11 +512,10 @@ export default function CreateAssetView() {
                                         ])
                                       }
                                       disabled={isSelected}
-                                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-default ${
-                                        isSelected
-                                          ? "bg-primary text-primary-foreground opacity-70"
-                                          : "bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary cursor-pointer"
-                                      }`}
+                                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-default ${isSelected
+                                        ? "bg-primary text-primary-foreground opacity-70"
+                                        : "bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary cursor-pointer"
+                                        }`}
                                     >
                                       #{tag}
                                     </button>
@@ -602,6 +616,7 @@ export default function CreateAssetView() {
                                     </p>
                                   </div>
                                   <Switch
+                                    checked={values.commercialUse}
                                     onCheckedChange={(val) =>
                                       setFieldValue("commercialUse", val)
                                     }
@@ -618,6 +633,7 @@ export default function CreateAssetView() {
                                     </p>
                                   </div>
                                   <Switch
+                                    checked={values.modifications}
                                     name="modifications"
                                     onCheckedChange={(val) =>
                                       setFieldValue("modifications", val)
@@ -634,6 +650,7 @@ export default function CreateAssetView() {
                                     </p>
                                   </div>
                                   <Switch
+                                    checked={values.attribution}
                                     onCheckedChange={(val) =>
                                       setFieldValue("attribution", val)
                                     }
@@ -685,58 +702,61 @@ export default function CreateAssetView() {
                     </Card>
                     {/* Creation Success */}
                     {txHash && (
-                      <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 animate-fade-in">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start space-x-4">
-                            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                              <CheckCircle className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-bold text-green-900 dark:text-green-100 mb-2">
-                                Asset Created!
-                              </h3>
-                              <div className="space-y-2">
-                                <p className="text-sm text-green-700 dark:text-green-300">
-                                  Your intellectual property has been
-                                  successfully minted and protected on the
-                                  blockchain.
-                                </p>
-                                <div className="space-y-1">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                                      Token ID:
-                                    </span>
-                                    <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono">
-                                      {tokenId}
-                                    </code>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                                      Transaction:
-                                    </span>
-                                    <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono break-all">
-                                      {txHash}
-                                    </code>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        window.open(
-                                          `${process.env.NEXT_PUBLIC_EXPLORER_URL}/tx/${txHash}`,
-                                          "_blank"
-                                        )
-                                      }
-                                      className="shrink-0"
-                                    >
-                                      <ExternalLink className="w-3 h-3" />
-                                    </Button>
+                      <>
+                        <Confetti />
+                        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 animate-fade-in">
+                          <CardContent className="pt-6">
+                            <div className="flex items-start space-x-4">
+                              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <CheckCircle className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-bold text-green-900 dark:text-green-100 mb-2">
+                                  Asset Created!
+                                </h3>
+                                <div className="space-y-2">
+                                  <p className="text-sm text-green-700 dark:text-green-300">
+                                    Your intellectual property has been
+                                    successfully minted and protected on the
+                                    blockchain.
+                                  </p>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                                        Token ID:
+                                      </span>
+                                      <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono">
+                                        {tokenId}
+                                      </code>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                                        Transaction:
+                                      </span>
+                                      <code className="text-xs bg-green-200 dark:bg-green-800 px-2 py-1 rounded font-mono break-all">
+                                        {txHash}
+                                      </code>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          window.open(
+                                            `${process.env.NEXT_PUBLIC_EXPLORER_URL}/tx/${txHash}`,
+                                            "_blank"
+                                          )
+                                        }
+                                        className="shrink-0"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </>
                     )}
 
                     {/* Create Button */}
@@ -756,9 +776,8 @@ export default function CreateAssetView() {
                             </div>
                             <div className="flex items-center space-x-2">
                               <div
-                                className={`w-3 h-3 rounded-full ${
-                                  user ? "bg-green-500" : "bg-yellow-500"
-                                } animate-pulse`}
+                                className={`w-3 h-3 rounded-full ${user ? "bg-green-500" : "bg-yellow-500"
+                                  } animate-pulse`}
                               ></div>
                               <span className="text-sm text-muted-foreground">
                                 {user ? "Ready" : "Loading"}

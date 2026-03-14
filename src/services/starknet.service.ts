@@ -39,7 +39,7 @@ export class StarkNetService {
     const u256Id = uint256.bnToUint256(BigInt(tokenId));
     const contract = new Contract(ERC721_ABI, normalizedAddress, this.provider);
     try {
-      const res = await contract.call("owner_of", [u256Id]);
+      const res = await contract.call("owner_of", [u256Id], { blockIdentifier: "latest" });
       const owner = Array.isArray(res) ? res[0] : res;
       return num.toHex(owner) ?? null;
     } catch (error) {
@@ -63,7 +63,7 @@ export class StarkNetService {
     const u256Id = uint256.bnToUint256(BigInt(tokenId));
     const contract = new Contract(ERC721_ABI, normalizedAddress, this.provider);
     try {
-      const res = await contract.call("token_uri", [u256Id]);
+      const res = await contract.call("token_uri", [u256Id], { blockIdentifier: "latest" });
       const uri = Array.isArray(res)
         ? res.map((x: any) => String(x)).join("")
         : res?.toString?.();
@@ -145,7 +145,7 @@ export class StarkNetService {
       const contract = new Contract(ERC721_ABI, nftContract, this.provider);
 
       // Get balance
-      const balanceResult = await contract.call("balanceOf", [walletAddress]);
+      const balanceResult = await contract.call("balanceOf", [walletAddress], { blockIdentifier: "latest" });
 
       const totalBalance = parseInt(balanceResult.toString());
       const newBalance = BigInt(totalBalance.toString());
@@ -184,19 +184,24 @@ export class StarkNetService {
             this.withRetry(async () => {
               const tokenIndex = uint256.bnToUint256(BigInt(i));
 
-              const tokenIdBigInt = await contract.token_of_owner_by_index(
+              const tokenIdBigInt = await contract.call("token_of_owner_by_index", [
                 walletAddress,
-                tokenIndex
-              );
-              const tokenId = tokenIdBigInt.toString();
+                tokenIndex,
+              ], { blockIdentifier: "latest" });
+              const tokenId = Array.isArray(tokenIdBigInt) 
+                ? tokenIdBigInt[0]?.toString() 
+                : tokenIdBigInt?.toString();
+              
+              if (!tokenId) return null;
+              
               let tokenURI: string | undefined;
               let metadata: any = undefined;
 
               try {
-                const uriResult = await contract.tokenURI(BigInt(tokenId));
+                const uriResult = await contract.call("token_uri", [tokenId], { blockIdentifier: "latest" });
                 tokenURI = Array.isArray(uriResult)
                   ? this.feltArrayToString(uriResult)
-                  : uriResult.toString();
+                  : uriResult?.toString?.();
 
                 if (
                   tokenURI?.startsWith("http") ||
@@ -243,10 +248,10 @@ export class StarkNetService {
       // Get balance, decimals, symbol, and name in parallel
       const [balanceResult, decimalsResult, symbolResult, nameResult] =
         await Promise.all([
-          contract.call("balanceOf", [walletAddress]),
-          contract.call("decimals", []).catch(() => 18), // Default to 18
-          contract.call("symbol", []).catch(() => "UNKNOWN"),
-          contract.call("name", []).catch(() => "Unknown Token"),
+          contract.call("balanceOf", [walletAddress], { blockIdentifier: "latest" }),
+          contract.call("decimals", [], { blockIdentifier: "latest" }).catch(() => 18), // Default to 18
+          contract.call("symbol", [], { blockIdentifier: "latest" }).catch(() => "UNKNOWN"),
+          contract.call("name", [], { blockIdentifier: "latest" }).catch(() => "Unknown Token"),
         ]);
 
       // Properly handle the contract call results
@@ -292,7 +297,7 @@ export class StarkNetService {
       const contract = new Contract(ERC721_ABI, nftContract, this.provider);
 
       // Get NFT balance
-      const balanceResult = await contract.call("balanceOf", [walletAddress]);
+      const balanceResult = await contract.call("balanceOf", [walletAddress], { blockIdentifier: "latest" });
       const balanceData = balanceResult as any;
       const balance = balanceData[0]
         ? Number(balanceData[0])
@@ -312,7 +317,7 @@ export class StarkNetService {
           const tokenResult = await contract.call("tokenOfOwnerByIndex", [
             walletAddress,
             { low: i, high: 0 },
-          ]);
+          ], { blockIdentifier: "latest" });
           const tokenData = tokenResult as any;
           const tokenId = tokenData[0]
             ? Number(tokenData[0])
@@ -327,7 +332,7 @@ export class StarkNetService {
           try {
             const uriResult = await contract.call("tokenURI", [
               { low: tokenId, high: 0 },
-            ]);
+            ], { blockIdentifier: "latest" });
             const uriData = uriResult as any;
             tokenURI = this.feltArrayToString(
               Array.isArray(uriData) ? uriData : [uriData]

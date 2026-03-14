@@ -17,18 +17,25 @@ export default function ActivitiesPage() {
 
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      try {
-        const walletData = await getWalletData()
-        if (!alive) return
-        if (walletData?.publicKey) setUserAddress(walletData.publicKey)
-      } catch (error) {
-        console.error('Error loading user wallet:', error)
-      }
-    })()
+      ; (async () => {
+        try {
+          const walletData = await getWalletData()
+          if (!alive) return
+          if (walletData?.publicKey) {
+            console.log('[ActivitiesPage] Wallet loaded:', walletData.publicKey)
+            setUserAddress(walletData.publicKey)
+          } else {
+            console.log('[ActivitiesPage] No wallet data found, displaying all activities')
+          }
+        } catch (error) {
+          console.error('[ActivitiesPage] Error loading user wallet:', error)
+          console.log('[ActivitiesPage] Continuing without user address filter')
+        }
+      })()
     return () => { alive = false }
   }, [])
 
+  // Use on-chain hook instead of API-based one
   const { activities, loading, error, onLoadMore } = useActivities({ userAddress, pageSize: 25, startBlock })
 
   const handleCopyToClipboard = (text: string) => {
@@ -37,7 +44,12 @@ export default function ActivitiesPage() {
   }
 
   const handleCreateNew = () => {
-    router.push('/create-asset')
+    router.push('/create')
+  }
+
+  const handleRefresh = () => {
+    // Reload the page to retry
+    window.location.reload()
   }
 
   return (
@@ -47,6 +59,8 @@ export default function ActivitiesPage() {
         loading={loading}
         error={error}
         onCopyToClipboard={handleCopyToClipboard}
+        onCreateNew={handleCreateNew}
+        onRefresh={handleRefresh}
         onLoadMore={onLoadMore}
         usingMockData={false}
       />

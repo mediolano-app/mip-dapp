@@ -39,8 +39,8 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
     filters: initialFilters = {},
   } = options;
 
-  const [rawAssets, setRawAssets] = useState<AssetIP[]>([]); 
-  const [assets, setAssets] = useState<AssetIP[]>([]); 
+  const [rawAssets, setRawAssets] = useState<AssetIP[]>([]);
+  const [assets, setAssets] = useState<AssetIP[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -60,7 +60,7 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
   // Refs for infinite scroll and request cancellation
   const loadingRef = useRef(false);
   const retryCountRef = useRef(0);
-  const maxRetries = 10; 
+  const maxRetries = 10;
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Memoized filter count for UI
@@ -83,24 +83,24 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
   const loadAssets = useCallback(
     async (reset = false) => {
       if (loadingRef.current) return;
-      
+
       // Throttle requests to prevent spam
       const now = Date.now();
       if (now - lastRequestTime < REQUEST_THROTTLE_MS) {
         return;
       }
       setLastRequestTime(now);
-      
+
       // Cancel previous request if still in flight
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      
+
       abortControllerRef.current = new AbortController();
-      
+
       loadingRef.current = true;
       const offset = reset ? 0 : rawAssets.length;
-      
+
       if (reset) {
         setIsLoading(true);
         setCurrentPage(0);
@@ -126,7 +126,7 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
         setHasMore(response.pagination.hasMore);
         setTotalAssets(response.pagination.total);
         setCurrentPage(Math.floor(offset / initialLimit) + 1);
-        
+
         // Reset retry count on success
         retryCountRef.current = 0;
         setError(null);
@@ -134,15 +134,15 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
         if (err instanceof Error && err.name === 'AbortError') {
           return;
         }
-        
+
         const errorMessage = err instanceof Error ? err.message : "Failed to load timeline assets";
-        
+
         if (rawAssets.length === 0) {
           setError(errorMessage);
         } else {
-          
+
         }
-        
+
         // Retry logic for network errors
         if (retryCountRef.current < maxRetries) {
           retryCountRef.current++;
@@ -188,9 +188,9 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
         activeFilters.indexerSource !== newFilters.indexerSource ||
         activeFilters.collectionId !== newFilters.collectionId
       );
-      
+
       setActiveFilters(updatedFilters);
-      
+
       if (backendFiltersChanged) {
         setRawAssets([]);
         setAssets([]);
@@ -221,7 +221,7 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
       const statsData = await timelineService.getTimelineStats();
       setStats(statsData);
     } catch (err) {
-      
+
     }
   }, []);
 
@@ -230,7 +230,7 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
     if (autoLoad) {
       loadAssets(true);
     }
-  }, [autoLoad]); 
+  }, [autoLoad]);
 
   useEffect(() => {
     if (rawAssets.length > 0) {
@@ -255,7 +255,7 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
 
       filterChangeTimeoutRef.current = setTimeout(() => {
         loadAssets(true);
-      }, 100); 
+      }, 100);
 
       return () => {
         if (filterChangeTimeoutRef.current) {
@@ -270,43 +270,9 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineReturn
     if (autoLoad) {
       loadStats();
     }
-  }, [autoLoad, loadStats]); 
+  }, [autoLoad, loadStats]);
 
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
-    let observer: IntersectionObserver;
 
-    const setupInfiniteScroll = () => {
-      const options = {
-        root: null,
-        rootMargin: "200px", // Trigger 200px before reaching bottom
-        threshold: 0,
-      };
-
-      observer = new IntersectionObserver((entries) => {
-        const first = entries[0];
-        if (first.isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-          loadMore();
-        }
-      }, options);
-
-      // Find scroll trigger element
-      const scrollTrigger = document.querySelector("[data-timeline-scroll-trigger]");
-      if (scrollTrigger) {
-        observer.observe(scrollTrigger);
-      }
-    };
-
-    // Setup observer after a short delay to ensure DOM is ready
-    const timeoutId = setTimeout(setupInfiniteScroll, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (observer) {
-        observer.disconnect();
-      }
-    };
-  }, [hasMore, isLoading, isLoadingMore, loadMore]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -356,7 +322,7 @@ export function useTimelineScroll() {
 
     const throttledHandleScroll = throttle(handleScroll, 100);
     window.addEventListener("scroll", throttledHandleScroll);
-    
+
     return () => window.removeEventListener("scroll", throttledHandleScroll);
   }, []);
 
@@ -380,10 +346,10 @@ function throttle<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout | null = null;
   let lastExecTime = 0;
-  
+
   return (...args: Parameters<T>) => {
     const currentTime = Date.now();
-    
+
     if (currentTime - lastExecTime > delay) {
       func(...args);
       lastExecTime = currentTime;

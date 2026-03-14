@@ -5,7 +5,7 @@ import { Activity, Sparkles, X, TrendingUp, Clock, CheckCircle, Calendar } from 
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent } from "@/src/components/ui/card"
 import { ActivityList } from "@/src/components/activities/activity-list"
-import { Pagination } from "@/src/components/pagination"
+
 import { SearchInput } from "./search-input"
 import { FilterButton, FilterPanel, ActiveFilters } from "./filter-components"
 import { ActivityItem } from "@/src/types/activity"
@@ -30,24 +30,23 @@ interface ActivitiesProps {
   className?: string
 }
 
-export function Activities({ 
-  activities: initialActivities, 
+export function Activities({
+  activities: initialActivities,
   loading = false,
   error = null,
-  onCreateNew, 
-  onCopyToClipboard = () => {}, 
+  onCreateNew,
+  onCopyToClipboard = () => { },
   onRefresh,
   onLoadMore,
   walletAddress,
   usingMockData = false,
-  className = "" 
+  className = ""
 }: ActivitiesProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
   const [showFilters, setShowFilters] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+
 
   const filteredActivities = useMemo(() => {
     return initialActivities.filter((activity) => {
@@ -66,13 +65,7 @@ export function Activities({
     })
   }, [initialActivities, searchQuery, filterType, filterStatus])
 
-  const paginatedActivities = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return filteredActivities.slice(startIndex, endIndex)
-  }, [filteredActivities, currentPage, itemsPerPage])
 
-  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage)
 
   const getActivityStats = (): ActivityStats => {
     const total = initialActivities.length
@@ -93,20 +86,11 @@ export function Activities({
     setSearchQuery("")
     setFilterType("all")
     setFilterStatus("all")
-    setCurrentPage(1)
   }
 
   const hasActiveFilters = Boolean(searchQuery) || filterType !== "all" || filterStatus !== "all"
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }
 
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage)
-    setCurrentPage(1)
-  }
 
   const activeFilterCount = [
     Boolean(searchQuery) && "search",
@@ -133,58 +117,23 @@ export function Activities({
                         <Activity className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent mb-2">
-                          Activity
-                        </h1>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                            Activity
+                          </h1>
+                          <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+                            <span className="text-sm font-semibold text-primary">
+                              Total: {stats.total}
+                            </span>
+                          </div>
+                        </div>
                         <p className="text-sm sm:text-base text-muted-foreground max-w-md">
                           Track your onchain activities with real-time updates
                         </p>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <Button
-                        size="sm"
-                        className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/25 hover:scale-105 transition-all duration-200"
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        <span className="hidden sm:inline">Insights</span>
-                      </Button>
-                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Stats Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <StatsCard
-                  title="Total Activities"
-                  value={stats.total}
-                  icon={TrendingUp}
-                  color="blue"
-                  delay={0}
-                />
-                <StatsCard
-                  title="Completed"
-                  value={stats.completed}
-                  icon={CheckCircle}
-                  color="green"
-                  delay={100}
-                />
-                <StatsCard
-                  title="Pending"
-                  value={stats.pending}
-                  icon={Clock}
-                  color="orange"
-                  delay={200}
-                />
-                <StatsCard
-                  title="This Month"
-                  value={stats.thisMonth}
-                  icon={Calendar}
-                  color="purple"
-                  delay={300}
-                />
               </div>
             </div>
 
@@ -228,8 +177,8 @@ export function Activities({
               )}
             </div>
 
-            {/* Loading State */}
-            {loading && (
+            {/* Loading State - only show if no activities and loading */}
+            {loading && initialActivities.length === 0 && (
               <div className="animate-fade-in-up" style={{ animationDelay: "500ms" }}>
                 <div className="text-center py-12">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full mb-4">
@@ -244,26 +193,43 @@ export function Activities({
             {/* Error State */}
             {error && !loading && (
               <div className="animate-fade-in-up" style={{ animationDelay: "500ms" }}>
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-full mb-4">
-                    <X className="w-8 h-8 text-red-500" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Activities</h3>
-                  <p className="text-muted-foreground mb-4">{error}</p>
-                  {onRefresh && (
-                    <Button onClick={onRefresh} variant="outline">
-                      Try Again
-                    </Button>
-                  )}
-                </div>
+                <Card className="border-red-500/20 bg-red-500/5">
+                  <CardContent className="p-6">
+                    <div className="text-center py-6">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-full mb-4">
+                        <X className="w-8 h-8 text-red-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Unable to Load Activities</h3>
+                      <p className="text-muted-foreground mb-4 max-w-md mx-auto">{error}</p>
+
+                      {error.includes('contract') && (
+                        <div className="bg-white/50 dark:bg-slate-900/50 rounded-lg p-4 text-left mb-4 border border-orange-200 dark:border-orange-900">
+                          <p className="text-sm font-semibold text-foreground mb-2">💡 Troubleshooting:</p>
+                          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                            <li>Check if the RPC endpoint is working</li>
+                            <li>Verify contract address is correct</li>
+                            <li>Make sure there are Transfer events on the contract</li>
+                            <li>Try refreshing the page</li>
+                          </ul>
+                        </div>
+                      )}
+
+                      {onRefresh && (
+                        <Button onClick={onRefresh} variant="outline">
+                          Try Again
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
             {/* Activities List */}
-            {!loading && !error && (
+            {(!loading || initialActivities.length > 0) && !error && (
               <div className="animate-fade-in-up" style={{ animationDelay: "500ms" }}>
                 <ActivityList
-                  activities={paginatedActivities}
+                  activities={filteredActivities}
                   copyToClipboard={onCopyToClipboard}
                   emptyStateTitle="No activities found"
                   emptyStateDescription="Your onchain activities will appear here. Try adjusting your filters or create your first IP asset."
@@ -294,54 +260,31 @@ export function Activities({
               </div>
             )}
 
-            {/* Pagination */}
-            {filteredActivities.length > 0 && (
-              <div className="mt-8 animate-fade-in-up" style={{ animationDelay: "600ms" }}>
-                <div className="bg-background/80 backdrop-blur-sm border border-border/50 rounded-2xl p-4 shadow-sm">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={filteredActivities.length}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={handlePageChange}
-                    onItemsPerPageChange={handleItemsPerPageChange}
-                  />
-                </div>
+
+
+            {/* Load More Button */}
+            {onLoadMore && (
+              <div className="mt-8 animate-fade-in-up text-center" style={{ animationDelay: "700ms" }}>
+                <Button
+                  onClick={onLoadMore}
+                  disabled={loading}
+                  variant="outline"
+                  className="hover:scale-105 transition-transform"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More Activities"
+                  )}
+                </Button>
               </div>
             )}
           </div>
         </div>
       </main>
     </div>
-  )
-}
-
-interface StatsCardProps {
-  title: string
-  value: number
-  icon: any
-  color: string
-  delay: number
-}
-
-function StatsCard({ title, value, icon: Icon, color, delay }: StatsCardProps) {
-  return (
-    <Card
-      className={`group relative overflow-hidden bg-gradient-to-br from-${color}-50/80 via-${color}-50/50 to-background dark:from-${color}-950/50 dark:via-${color}-950/30 dark:to-background border-${color}-200/50 dark:border-${color}-800/30 transition-all duration-300 animate-fade-in-up`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      <div className={`absolute inset-0 bg-gradient-to-br from-${color}-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-      <CardContent className="relative p-4 sm:p-5 text-center">
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-${color}-500 to-${color}-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-${color}-500/25`}>
-          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-        </div>
-        <div className={`text-xl sm:text-2xl font-bold text-${color}-900 dark:text-${color}-100 mb-1`}>
-          {value}
-        </div>
-        <div className={`text-xs sm:text-sm text-${color}-700 dark:text-${color}-300 font-medium`}>
-          {title}
-        </div>
-      </CardContent>
-    </Card>
   )
 }

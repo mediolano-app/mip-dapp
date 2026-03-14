@@ -34,7 +34,7 @@ export function useIpfsUpload() {
   };
 
   const uploadToIpfs = useCallback(
-    async (file: File, metadata: Omit<IpfsMetadata, "image">) => {
+    async (file: File | null, metadata: IpfsMetadata) => {
       setLoading(true);
       setError(null);
       setProgress(0);
@@ -44,13 +44,17 @@ export function useIpfsUpload() {
       const progressInterval = simulateProgress();
 
       try {
-        // Upload file
-        const fileSignedUrl = await getSignedUrl();
-        const fileUpload = await pinata.upload.public
-          .file(file)
-          .url(fileSignedUrl);
-        const uploadedFileUrl = `${IPFS_URL}/${fileUpload.cid}`;
-        setFileUrl(uploadedFileUrl);
+        let uploadedFileUrl = metadata.image || "";
+
+        // Upload file if provided
+        if (file) {
+          const fileSignedUrl = await getSignedUrl();
+          const fileUpload = await pinata.upload.public
+            .file(file)
+            .url(fileSignedUrl);
+          uploadedFileUrl = `${IPFS_URL}/${fileUpload.cid}`;
+          setFileUrl(uploadedFileUrl);
+        }
 
         // Upload metadata
         const metadataWithImage = {

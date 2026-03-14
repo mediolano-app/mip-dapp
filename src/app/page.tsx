@@ -15,20 +15,12 @@ export default function HomePage() {
 
   return (
     <div className="bg-gradient-to-br from-background via-muted/10 to-background">
-     
-     
+
+
 
       <main className="pb-6">
 
-      {/* Featured Article Section 
-      <div className="px-4 pt-6 pb-8">
-        <div className="max-w-6xl mx-auto">
-        {featuredArticle && <FeaturedArticle article={featuredArticle} />}
-        </div>
-      </div>*/}
-
-
-      {/* Prism Hero Section */}
+        {/* Prism Hero Section */}
         <div className="px-4 pt-6">
           <div className="mx-auto max-w-6xl">
             <PrismHero
@@ -114,7 +106,7 @@ export default function HomePage() {
 
 
       </main>
-     
+
     </div>
   )
 }

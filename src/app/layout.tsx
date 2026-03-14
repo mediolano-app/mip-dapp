@@ -15,8 +15,8 @@ import StarknetProviderWrapper from "./StarknetProviderWrapper";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MIP",
-  description: "Own and publish your content onchain",
+  title: "My Intellectual Property",
+  description: "MIP Mobile : Own and share your content onchain",
 };
 
 export default function RootLayout({

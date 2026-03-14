@@ -2,7 +2,8 @@ import { Badge } from "@/src/components/ui/badge"
 import { useIsMobile } from "@/src/components/ui/use-mobile"
 import { shortenAddress } from "@/src/lib/utils"
 import { TransactionDetails } from "./transaction-details"
-import { ArrowUpRight, ArrowDownLeft, Plus, Send, CheckCircle, AlertCircle, Loader, Sparkles, Flame, Pencil } from "lucide-react"
+import { ArrowUpRight, ArrowDownLeft, Plus, Send, CheckCircle, AlertCircle, Loader, Sparkles, Flame, Pencil, ExternalLink } from "lucide-react"
+import Link from "next/link"
 import {
   type ActivityItem as ActivityItemType,
   activityGradients,
@@ -35,14 +36,14 @@ export function ActivityItem({
 
   const Icon =
     type === 'collection_create' ? Sparkles :
-    type === 'burn' ? Flame :
-    type === 'update' ? Pencil :
-    type === 'mint' ? Plus :
-    type === 'transfer_out' ? Send :
-    type === 'transfer_in' ? ArrowDownLeft : ArrowUpRight
-  
+      type === 'burn' || type === 'burn_batch' ? Flame :
+        type === 'update' ? Pencil :
+          type === 'mint' || type === 'mint_batch' ? Plus :
+            type === 'transfer_out' || type === 'transfer_batch' ? Send :
+              type === 'transfer_in' ? ArrowDownLeft : ArrowUpRight
+
   const StatusIcon = status === 'completed' ? CheckCircle :
-                     status === 'pending' ? Loader : AlertCircle
+    status === 'pending' ? Loader : AlertCircle
 
   return (
     <div className="flex flex-col gap-2 p-4 rounded-xl bg-gradient-to-br from-background to-muted/20 border border-border/50 hover:border-border transition-colors">
@@ -68,19 +69,19 @@ export function ActivityItem({
               )}
             </div>
           </div>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-2">
+          {/* <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-2">
             <TransactionDetails
               hash={hash}
               network={network}
               onCopy={onCopy}
             />
-              <time className="text-xs text-muted-foreground">
-                {timestamp ? new Date(timestamp).toLocaleString(undefined, {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit'
-                }) : '—'}
-              </time>
-          </div>
+            <time className="text-xs text-muted-foreground">
+              {timestamp ? new Date(timestamp).toLocaleString(undefined, {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+              }) : '—'}
+            </time>
+          </div> */}
         </div>
       </div>
     </div>

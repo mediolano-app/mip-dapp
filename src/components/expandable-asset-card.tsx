@@ -32,7 +32,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu"
-import { ReportContentDialog } from "@/src/components/report-content-dialog"
+import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
+import { LazyMedia } from "@/src/components/ui/lazy-media"
 
 interface ExpandableAssetCardProps {
   asset: AssetIP
@@ -87,17 +88,17 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
 
   if (variant === "list") {
     return (
-      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group bg-card/50 backdrop-blur-sm">
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <div className="p-4">
             <div className="flex items-center space-x-4">
               <Link href={`/asset/${asset.slug}`} className="relative flex-shrink-0">
-                <Image
+                <LazyMedia
                   src={asset.mediaUrl || "/placeholder.svg"}
                   alt={asset.title}
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform shadow-md"
+                  width={96}
+                  height={96}
+                  className="w-24 h-24 rounded-xl shadow-sm group-hover:shadow-md transition-shadow"
                 />
                 <Badge className="absolute -top-2 -right-2 text-xs capitalize bg-primary/90 text-primary-foreground">
                   {asset.type}
@@ -140,7 +141,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                       </Button>
                     </CollapsibleTrigger>
 
-                     
+
                     <Link href={`/asset/${asset.slug}`}>
                       <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
                         <Eye className="w-4 h-4 mr-1" />
@@ -183,11 +184,11 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                         {!isOwner && (
                           <>
                             <DropdownMenuSeparator />
-                            <ReportContentDialog
+                            <ReportAssetDialog
                               contentType="asset"
                               contentId={asset.id}
                               contentTitle={asset.title}
-                              contentOwner={asset.author}
+                              contentCreator={asset.author}
                             >
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
@@ -196,7 +197,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                                 <Flag className="w-4 h-4 mr-2" />
                                 Report Content
                               </DropdownMenuItem>
-                            </ReportContentDialog>
+                            </ReportAssetDialog>
                           </>
                         )}
                       </DropdownMenuContent>
@@ -208,8 +209,8 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
 
             <CollapsibleContent className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/30">
-               
-               
+
+
                 {/* Creator Info
                 <div className="space-y-3">
                   <h4 className="font-medium text-foreground text-sm">Creator</h4>
@@ -304,10 +305,10 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                   </div>
                 </div>
 
-                
+
                 {asset.externalUrl && (
                   <div className="space-y-3">
-                    
+
                     <div className="flex items-center space-x-2">
                       <Globe className="w-4 h-4 text-muted-foreground" />
                       <a
@@ -335,14 +336,14 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <div className="relative">
           <Link href={`/asset/${asset.slug}`}>
-            <Image
+            <LazyMedia
               src={asset.mediaUrl || "/placeholder.svg"}
               alt={asset.title}
               width={400}
               height={300}
-              className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
+              className="w-full h-64"
             />
-          </Link> 
+          </Link>
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           <div className="absolute top-3 right-3">
@@ -385,11 +386,11 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                 {!isOwner && (
                   <>
                     <DropdownMenuSeparator />
-                    <ReportContentDialog
+                    <ReportAssetDialog
                       contentType="asset"
                       contentId={asset.id}
                       contentTitle={asset.title}
-                      contentOwner={asset.author}
+                      contentCreator={asset.author}
                     >
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
@@ -398,7 +399,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                         <Flag className="w-4 h-4 mr-2" />
                         Report Content
                       </DropdownMenuItem>
-                    </ReportContentDialog>
+                    </ReportAssetDialog>
                   </>
                 )}
               </DropdownMenuContent>
@@ -421,7 +422,7 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
         <CardContent className="p-6">
           <div className="space-y-4">
             <div>
-             <Link href={`/asset/${asset.slug}`}>
+              <Link href={`/asset/${asset.slug}`}>
                 <h3 className="font-semibold text-foreground mb-2 truncate group-hover:text-primary transition-colors cursor-pointer text-lg">
                   {asset.title}
                 </h3>
@@ -444,8 +445,8 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
             </div>
 
             <div className="flex space-x-2">
-              
-             
+
+
               <Link href={`/asset/${asset.slug}`} className="flex-1">
                 <Button
                   variant="outline"
@@ -456,9 +457,9 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                   View Asset
                 </Button>
               </Link>
-             
-              
-              
+
+
+
               <CollapsibleTrigger asChild>
                 <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
                   <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
@@ -469,8 +470,8 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
 
           <CollapsibleContent className="mt-4">
             <div className="space-y-4 pt-4 border-t border-border/30">
-             
-             
+
+
               {/* Creator Info 
               <div>
                 <h4 className="font-medium text-foreground mb-3 text-sm">Creator</h4>

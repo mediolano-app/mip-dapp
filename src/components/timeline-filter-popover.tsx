@@ -150,14 +150,19 @@ export function TimelineFilterPopover({
     tags: [],
     priceRange: [0, 100],
   },
-  onFiltersChange = () => {},
+  onFiltersChange = () => { },
   activeFilterCount = 0,
-  onClearFilters = () => {},
+  onClearFilters = () => { },
   open,
   onOpenChange,
 }: TimelineFilterPopoverProps) {
   const [localFilters, setLocalFilters] = useState<FilterState>(filters)
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Use internal state if not controlled externally
   const popoverOpen = open !== undefined ? open : isOpen
@@ -217,10 +222,10 @@ export function TimelineFilterPopover({
   return (
     <Popover open={popoverOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="relative">
+        <Button variant="outline" className="relative" suppressHydrationWarning>
           <Filter className="w-4 h-4 mr-2" />
           Filters
-          {activeFilterCount > 0 && (
+          {mounted && activeFilterCount > 0 && (
             <Badge className="absolute -top-2 -right-2 w-5 h-5 p-0 flex items-center justify-center text-xs bg-primary">
               {activeFilterCount}
             </Badge>
@@ -278,9 +283,8 @@ export function TimelineFilterPopover({
                     <button
                       key={type.id}
                       onClick={() => toggleAssetType(type.id)}
-                      className={`p-2 rounded-lg border-2 transition-all text-left ${
-                        isSelected ? "border-primary bg-primary/10" : "border-border hover:border-border/80 bg-card"
-                      }`}
+                      className={`p-2 rounded-lg border-2 transition-all text-left ${isSelected ? "border-primary bg-primary/10" : "border-border hover:border-border/80 bg-card"
+                        }`}
                     >
                       <div className="flex items-center space-x-2">
                         <div className={`w-5 h-5 rounded-md flex items-center justify-center ${type.color}`}>
@@ -309,11 +313,10 @@ export function TimelineFilterPopover({
                     <button
                       key={license.id}
                       onClick={() => toggleLicense(license.id)}
-                      className={`w-full p-2 rounded-md border text-left transition-all ${
-                        isSelected
+                      className={`w-full p-2 rounded-md border text-left transition-all ${isSelected
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-border hover:border-border/80 text-foreground"
-                      }`}
+                        }`}
                     >
                       <span className="text-sm">{license.label}</span>
                     </button>
@@ -400,11 +403,10 @@ export function TimelineFilterPopover({
                     <button
                       key={tag}
                       onClick={() => toggleTag(tag)}
-                      className={`px-2 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                        isSelected
+                      className={`px-2 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${isSelected
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
+                        }`}
                     >
                       #{tag}
                     </button>
@@ -426,20 +428,20 @@ export function TimelineFilterPopover({
                     ? v
                     : v !== "" && v !== "all" && v !== "recent",
               ) && (
-                <Badge className="ml-2 bg-primary-foreground hover:bg-white text-primary">
-                  {[
-                    localFilters.search && 1,
-                    localFilters.assetTypes.length,
-                    localFilters.licenses.length,
-                    localFilters.verifiedOnly && 1,
-                    localFilters.dateRange !== "all" && 1,
-                    localFilters.sortBy !== "recent" && 1,
-                    localFilters.tags.length,
-                  ]
-                    .filter(Boolean)
-                    .reduce((a, b) => (a as number) + (b as number), 0)}
-                </Badge>
-              )}
+                  <Badge className="ml-2 bg-primary-foreground hover:bg-white text-primary">
+                    {[
+                      localFilters.search && 1,
+                      localFilters.assetTypes.length,
+                      localFilters.licenses.length,
+                      localFilters.verifiedOnly && 1,
+                      localFilters.dateRange !== "all" && 1,
+                      localFilters.sortBy !== "recent" && 1,
+                      localFilters.tags.length,
+                    ]
+                      .filter(Boolean)
+                      .reduce((a, b) => (a as number) + (b as number), 0)}
+                  </Badge>
+                )}
             </Button>
             <Button variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel

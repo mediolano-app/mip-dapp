@@ -47,7 +47,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { ReportContentDialog } from "@/src/components/report-content-dialog"
+import { ReportAssetDialog } from "@/src/components/report-asset-dialog"
+import { LazyMedia } from "@/src/components/ui/lazy-media"
 
 const getLicenseColor = (licenseType: string) => {
   switch (licenseType) {
@@ -92,6 +93,7 @@ export function Timeline() {
     updateFilters,
     clearFilters: clearTimelineFilters,
     activeFilters,
+    loadMore,
   } = useTimeline({
     initialLimit: ASSETS_PER_PAGE,
     autoLoad: true,
@@ -107,12 +109,12 @@ export function Timeline() {
       sortBy: (filters.sortBy === "recent"
         ? "mintedAtBlock"
         : filters.sortBy === "popular"
-        ? "mintedAtBlock"
-        : filters.sortBy === "trending"
-        ? "mintedAtBlock"
-        : filters.sortBy === "alphabetical"
-        ? "id"
-        : "mintedAtBlock") as "mintedAtBlock" | "id",
+          ? "mintedAtBlock"
+          : filters.sortBy === "trending"
+            ? "mintedAtBlock"
+            : filters.sortBy === "alphabetical"
+              ? "id"
+              : "mintedAtBlock") as "mintedAtBlock" | "id",
     };
 
     // Check if backend filters changed (only sort now, search is frontend)
@@ -152,15 +154,7 @@ export function Timeline() {
     return count;
   }, [filters]);
 
-  // Infinite scroll trigger element
-  const scrollTriggerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const element = scrollTriggerRef.current;
-    if (!element) return;
-
-    element.setAttribute("data-timeline-scroll-trigger", "true");
-  }, []);
 
   const clearFilters = () => {
     setFilters(defaultFilters);
@@ -227,8 +221,8 @@ export function Timeline() {
 
   return (
     <div className="space-y-6">
-      
-      
+
+
       {/* Filter Controls */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
@@ -392,12 +386,12 @@ export function Timeline() {
                 {/* Asset Media - Top */}
                 <Link href={`/asset/${asset.slug}`}>
                   <div className="relative">
-                    <Image
+                    <LazyMedia
                       src={asset.mediaUrl || "/placeholder.svg"}
                       alt={asset.title}
                       width={600}
                       height={400}
-                      className="w-full h-64 object-cover cursor-pointer"
+                      className="w-full h-64"
                     />
                     <div className="absolute top-3 right-3">
                       <Badge
@@ -484,15 +478,14 @@ export function Timeline() {
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
                         </DropdownMenuItem>
-                       
+
                         <DropdownMenuSeparator />
 
-                        <ReportContentDialog
+                        <ReportAssetDialog
                           contentType="asset"
                           contentId={asset.id}
                           contentTitle={asset.title}
-                          contentOwner={asset.author}
-                          contentImage={asset.mediaUrl}
+                          contentCreator={asset.author}
                         >
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive cursor-pointer"
@@ -501,7 +494,7 @@ export function Timeline() {
                             <Flag className="w-4 h-4 mr-2" />
                             Report Asset
                           </DropdownMenuItem>
-                        </ReportContentDialog>
+                        </ReportAssetDialog>
 
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -556,9 +549,8 @@ export function Timeline() {
                       <CollapsibleTrigger asChild>
                         <Button variant="outline" size="sm">
                           <ChevronDown
-                            className={`w-4 h-4 transition-transform ${
-                              expandedAssets.has(asset.id) ? "rotate-180" : ""
-                            }`}
+                            className={`w-4 h-4 transition-transform ${expandedAssets.has(asset.id) ? "rotate-180" : ""
+                              }`}
                           />
                         </Button>
                       </CollapsibleTrigger>
@@ -757,8 +749,30 @@ export function Timeline() {
             </div>
           )}
 
-          {/* Infinite scroll trigger */}
-          <div ref={scrollTriggerRef} className="h-1" />
+          {/* Pagination */}
+          {hasMore && (
+            <div className="flex justify-center pt-8 pb-4">
+              <Button
+                onClick={() => loadMore()}
+                disabled={isLoadingMore}
+                variant="outline"
+                size="lg"
+                className="min-w-[200px] shadow-sm hover:shadow-md transition-all duration-300"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Loading Assets...
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4 mr-2" />
+                    Load More Assets
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
 
           {/* End of results */}
           {!hasMore && assets.length > 0 && (
