@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
@@ -34,12 +34,14 @@ import {
 } from "lucide-react";
 import type { AssetIP } from "@/src/types/asset";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ExpandableAssetCard } from "@/src/components/expandable-asset-card";
 import { useGetPortfolioAssets } from "@/src/hooks/use-wallet-assets";
 import { useUser } from "@clerk/nextjs";
 
 export default function PortfolioView() {
   const { user } = useUser();
+  const searchParams = useSearchParams();
   const [selectedTab, setSelectedTab] = useState("owned");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,6 +57,48 @@ export default function PortfolioView() {
     error: asset_error,
     refetchAsset,
   } = useGetPortfolioAssets(publicKey || null);
+
+  const tx = searchParams.get("tx");
+
+  // Keep portfolio fresh without a hard reload:
+  // - Refetch when tab becomes active again
+  // - After a transfer redirect (`?tx=...`), poll briefly to catch chain confirmation/indexing lag
+  useEffect(() => {
+    const onFocus = () => {
+      void refetchAsset();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refetchAsset();
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refetchAsset]);
+
+  useEffect(() => {
+    if (!tx) return;
+
+    void refetchAsset();
+
+    const startedAt = Date.now();
+    const intervalId = window.setInterval(() => {
+      // Poll every 5s for ~30s after transfer redirect
+      if (Date.now() - startedAt > 30_000) {
+        window.clearInterval(intervalId);
+        return;
+      }
+      void refetchAsset();
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [tx, refetchAsset]);
 
   // Transform NFTs to asset format for display
   const portfolioAssets = portfolioAsset?.map((nft) => ({
@@ -385,7 +429,11 @@ export default function PortfolioView() {
                 </div>
 
                 <TabsContent value="owned" className="mt-6">
-                  <AssetGrid assets={sortedAssets as any} viewMode={viewMode} />
+                  <AssetGrid
+                    assets={sortedAssets as any}
+                    viewMode={viewMode}
+                    isOwner={true}
+                  />
                 </TabsContent>
 
                 <TabsContent value="created" className="mt-6">

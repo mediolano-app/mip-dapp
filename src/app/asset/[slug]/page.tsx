@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Badge } from "@/src/components/ui/badge"
@@ -16,6 +16,7 @@ import { useAssetBySlug } from "@/src/hooks/use-asset"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu"
 import { getLicenseColor, getProtectionIcon } from "@/src/lib/asset-display-utils"
 import { getExplorerUrlForToken } from "@/src/lib/explorer"
+import { useUser } from "@clerk/nextjs"
 
 import { getAssetReportStatus, ReportStatus } from "@/src/lib/reported-content"
 import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert"
@@ -29,7 +30,12 @@ export default function AssetPage() {
   const router = useRouter()
   const slug = params.slug as string
   const { asset, isLoading } = useAssetBySlug(slug)
-  const [isOwner] = useState(false)
+  const { user } = useUser()
+  const isOwner = useMemo(() => {
+    const wallet = String((user?.publicMetadata as any)?.publicKey || "").toLowerCase()
+    const owner = String(asset?.creator?.wallet || "").toLowerCase()
+    return Boolean(wallet && owner && wallet === owner)
+  }, [user, asset])
   const [showHiddenContent, setShowHiddenContent] = useState(false)
 
 
@@ -40,7 +46,9 @@ export default function AssetPage() {
   }
 
   const handleTransfer = () => {
-    router.push(`/transfer?asset=${asset?.slug}`)
+    if (!asset?.contractAddress || !asset?.tokenId) return
+    const transferSlug = `${asset.contractAddress}-${asset.tokenId}`
+    router.push(`/transfer?asset=${encodeURIComponent(transferSlug)}`)
   }
 
   if (isLoading) {
@@ -171,7 +179,7 @@ export default function AssetPage() {
                   </div>
                 </Card>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <Button variant="outline" onClick={handleShare}>
                     <Share className="w-4 h-4 mr-2" />
                     Share

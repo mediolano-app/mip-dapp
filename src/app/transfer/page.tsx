@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { cairo } from "starknet";
+import { uint256 } from "starknet";
 import {
   Card, 
   CardContent,
@@ -74,7 +74,6 @@ export default function TransferPage() {
   // Chipi SDK hooks
   const {
     transferAsync,
-    transferData,
     isLoading: isTransferLoading,
   } = useTransfer();
 
@@ -289,39 +288,70 @@ export default function TransferPage() {
         throw new Error("Selected asset does not have a token ID");
       }
 
+      const tokenId = selectedAssetData.tokenId.toString();
+      // u256 must be two felts (low, high) for Chipi/Starknet calldata
+      const tokenIdU256 = uint256.bnToUint256(BigInt(tokenId));
+
       const transferResult = await callAnyContractAsync({
-        encryptKey: pin,
-        bearerToken: token,
-        wallet: {
-          publicKey: walletData.publicKey,
-          encryptedPrivateKey: walletData.encryptedPrivateKey,
-        },
-        contractAddress: MEDIOLANO_CONTRACT,
-        calls: [
-          {
-            contractAddress: MEDIOLANO_CONTRACT,
-            entrypoint: "transfer_from",
-            calldata: [
-              walletData.publicKey,
-              recipientAddress,
-              cairo.uint256(selectedAssetData.tokenId),
-            ],
+        params: {
+          encryptKey: pin,
+          wallet: {
+            publicKey: walletData.publicKey,
+            encryptedPrivateKey: walletData.encryptedPrivateKey,
           },
-        ],
+          contractAddress: MEDIOLANO_CONTRACT,
+          calls: [
+            {
+              contractAddress: MEDIOLANO_CONTRACT,
+              entrypoint: "transfer_from",
+              calldata: [
+                walletData.publicKey,
+                recipientAddress,
+                tokenIdU256.low.toString(),
+                tokenIdU256.high.toString(),
+              ],
+            },
+          ],
+        },
+        bearerToken: token,
       });
 
-      console.log("Transfer initiated successfully", transferResult);
-      setShowPinDialog(false);
+      const txHash = transferResult as unknown as string;
+      console.log("Transfer submitted", txHash);
 
       toast({
-        title: "🎉 Transfer Initiated!",
-        description: "Your IP asset is being transferred on the blockchain",
+        title: "Transfer Submitted",
+        description: "Waiting for on-chain confirmation…",
       });
 
-      // Optional: redirect after successful transfer
-      setTimeout(() => {
-        router.push("/portfolio");
-      }, 3000);
+      // Wait for acceptance so the portfolio view reflects new ownership without a hard reload.
+      const startedAt = Date.now();
+      const timeoutMs = 60_000;
+      // Poll every 2s (max 30 attempts for 60s)
+      while (Date.now() - startedAt < timeoutMs) {
+        const { status } = await starknetService.getTransactionStatus(txHash);
+        if (status === "ACCEPTED_ON_L1" || status === "ACCEPTED_ON_L2") {
+          toast({
+            title: "🎉 Transfer Confirmed",
+            description: "Redirecting to your portfolio…",
+          });
+          setShowPinDialog(false);
+          router.push(`/portfolio?tx=${encodeURIComponent(txHash)}`);
+          return;
+        }
+        if (status === "REJECTED") {
+          throw new Error("Transaction was rejected on-chain");
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      // Timeout fallback: still redirect, but let /portfolio poll/refetch for a short window.
+      toast({
+        title: "Transfer Pending",
+        description: "Still confirming. Redirecting to portfolio…",
+      });
+      setShowPinDialog(false);
+      router.push(`/portfolio?tx=${encodeURIComponent(txHash)}`);
     } catch (error) {
       console.error("Transfer failed:", error);
       const errorMessage =
