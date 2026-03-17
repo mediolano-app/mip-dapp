@@ -149,6 +149,17 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                       </Button>
                     </Link>
 
+                    {isOwner && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="hover:scale-105 transition-transform"
+                        onClick={handleTransfer}
+                      >
+                        <Send className="w-4 h-4 mr-1" />
+                        Transfer
+                      </Button>
+                    )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="w-8 h-8 p-0 hover:scale-105 transition-transform">
@@ -457,6 +468,19 @@ export function ExpandableAssetCard({ asset, variant = "grid", isOwner = false }
                   View Asset
                 </Button>
               </Link>
+
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hover:scale-105 transition-transform"
+                  onClick={handleTransfer}
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  Transfer
+                </Button>
+              )}
+
 
 
 
